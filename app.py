@@ -97,4 +97,4 @@ with tab2:
     with open("Paper draft (1).pdf", "rb") as f: 
         pdf_bytes = f.read()
 
-    st.pdf(pdf_bytes, width=700, height=1000)
+    st.pdf(pdf_bytes)
