@@ -1,0 +1,315 @@
+{
+  "created_at_utc": "2026-10-20T01:52:56.893472+00:00",
+  "dataset": {
+    "source": "Two CSV files referenced by the attached Colab notebook",
+    "files": {
+      "churn-20.csv": "c73bb8e7a47c8fced62ddef54741bbbc4005243fb40a65996360337844fd17f7",
+      "churn-80.csv": "b8bbd0099748ba3b0f337538cfa5997b5255bdc23c35144ffabba3cafb192550"
+    },
+    "rows": 3333,
+    "feature_count": 17,
+    "user_input_feature_count": 13,
+    "churn_rows": 483,
+    "churn_rate": 0.14491449144914492,
+    "duplicate_rows": 0
+  },
+  "target": {
+    "name": "Churn",
+    "positive_class": 1
+  },
+  "features": [
+    "Account length",
+    "International plan",
+    "Voice mail plan",
+    "Number vmail messages",
+    "Total day minutes",
+    "Total day calls",
+    "Total day charge",
+    "Total eve minutes",
+    "Total eve calls",
+    "Total eve charge",
+    "Total night minutes",
+    "Total night calls",
+    "Total night charge",
+    "Total intl minutes",
+    "Total intl calls",
+    "Total intl charge",
+    "Customer service calls"
+  ],
+  "input_features": [
+    "Account length",
+    "International plan",
+    "Voice mail plan",
+    "Number vmail messages",
+    "Total day minutes",
+    "Total day calls",
+    "Total eve minutes",
+    "Total eve calls",
+    "Total night minutes",
+    "Total night calls",
+    "Total intl minutes",
+    "Total intl calls",
+    "Customer service calls"
+  ],
+  "input_ranges": {
+    "Account length": {
+      "min": 1.0,
+      "max": 243.0,
+      "median": 101.0
+    },
+    "International plan": {
+      "min": 0.0,
+      "max": 1.0,
+      "median": 0.0
+    },
+    "Voice mail plan": {
+      "min": 0.0,
+      "max": 1.0,
+      "median": 0.0
+    },
+    "Number vmail messages": {
+      "min": 0.0,
+      "max": 51.0,
+      "median": 0.0
+    },
+    "Total day minutes": {
+      "min": 0.0,
+      "max": 350.8,
+      "median": 179.4
+    },
+    "Total day calls": {
+      "min": 0.0,
+      "max": 165.0,
+      "median": 101.0
+    },
+    "Total eve minutes": {
+      "min": 0.0,
+      "max": 363.7,
+      "median": 201.4
+    },
+    "Total eve calls": {
+      "min": 0.0,
+      "max": 170.0,
+      "median": 100.0
+    },
+    "Total night minutes": {
+      "min": 23.2,
+      "max": 395.0,
+      "median": 201.2
+    },
+    "Total night calls": {
+      "min": 33.0,
+      "max": 175.0,
+      "median": 100.0
+    },
+    "Total intl minutes": {
+      "min": 0.0,
+      "max": 20.0,
+      "median": 10.3
+    },
+    "Total intl calls": {
+      "min": 0.0,
+      "max": 20.0,
+      "median": 4.0
+    },
+    "Customer service calls": {
+      "min": 0.0,
+      "max": 9.0,
+      "median": 1.0
+    }
+  },
+  "charge_formulas": {
+    "Total day charge": {
+      "minutes_feature": "Total day minutes",
+      "rate": 0.17,
+      "rounding": 2
+    },
+    "Total eve charge": {
+      "minutes_feature": "Total eve minutes",
+      "rate": 0.085,
+      "rounding": 2
+    },
+    "Total night charge": {
+      "minutes_feature": "Total night minutes",
+      "rate": 0.045,
+      "rounding": 2
+    },
+    "Total intl charge": {
+      "minutes_feature": "Total intl minutes",
+      "rate": 0.27,
+      "rounding": 2
+    }
+  },
+  "split": {
+    "strategy": "single stratified holdout",
+    "test_size": 0.2,
+    "random_state": 42,
+    "training_rows": 2666,
+    "test_rows": 667
+  },
+  "baseline": {
+    "strategy": "most_frequent",
+    "test_accuracy": 0.8545727136431784,
+    "test_churn_recall": 0.0
+  },
+  "evaluation_model": {
+    "estimator": "RandomForestClassifier",
+    "parameters": {
+      "n_estimators": 100,
+      "max_depth": 100,
+      "class_weight": "balanced",
+      "random_state": 0
+    },
+    "test_metrics": {
+      "accuracy": 0.9550224887556222,
+      "churn_precision": 0.8602150537634409,
+      "churn_recall": 0.8247422680412371,
+      "churn_f1": 0.8421052631578947,
+      "roc_auc": 0.9217941761620546,
+      "pr_auc_average_precision": 0.8654083963889101,
+      "confusion_matrix_labels_0_1": [
+        [
+          557,
+          13
+        ],
+        [
+          17,
+          80
+        ]
+      ],
+      "classification_report": {
+        "no_churn": {
+          "precision": 0.9703832752613241,
+          "recall": 0.9771929824561404,
+          "f1-score": 0.9737762237762237,
+          "support": 570.0
+        },
+        "churn": {
+          "precision": 0.8602150537634409,
+          "recall": 0.8247422680412371,
+          "f1-score": 0.8421052631578947,
+          "support": 97.0
+        },
+        "accuracy": 0.9550224887556222,
+        "macro avg": {
+          "precision": 0.9152991645123825,
+          "recall": 0.9009676252486887,
+          "f1-score": 0.9079407434670592,
+          "support": 667.0
+        },
+        "weighted avg": {
+          "precision": 0.9543618097661297,
+          "recall": 0.9550224887556222,
+          "f1-score": 0.9546276732815043,
+          "support": 667.0
+        }
+      }
+    },
+    "median_imputation_sensitivity": {
+      "1": {
+        "accuracy": {
+          "mean": 0.9394302848575713,
+          "std": 0.004507735045988869
+        },
+        "churn_precision": {
+          "mean": 0.8331393502824642,
+          "std": 0.015579767539295974
+        },
+        "churn_recall": {
+          "mean": 0.7298969072164949,
+          "std": 0.029449189396052997
+        },
+        "churn_f1": {
+          "mean": 0.7777686209917543,
+          "std": 0.01903739975237638
+        },
+        "roc_auc": {
+          "mean": 0.8876849339844455,
+          "std": 0.01616222544568443
+        },
+        "pr_auc_average_precision": {
+          "mean": 0.7909681896892861,
+          "std": 0.024964872139199356
+        }
+      },
+      "3": {
+        "accuracy": {
+          "mean": 0.9130434782608695,
+          "std": 0.003284692998531746
+        },
+        "churn_precision": {
+          "mean": 0.8084596753677422,
+          "std": 0.03209070893187166
+        },
+        "churn_recall": {
+          "mean": 0.5298969072164949,
+          "std": 0.0383527324489449
+        },
+        "churn_f1": {
+          "mean": 0.6385650766265082,
+          "std": 0.02225870912157688
+        },
+        "roc_auc": {
+          "mean": 0.7978187737384699,
+          "std": 0.016641221104233227
+        },
+        "pr_auc_average_precision": {
+          "mean": 0.6506987378837034,
+          "std": 0.016086028576364986
+        }
+      },
+      "5": {
+        "accuracy": {
+          "mean": 0.8932533733133432,
+          "std": 0.0030578827667722993
+        },
+        "churn_precision": {
+          "mean": 0.7552528379772961,
+          "std": 0.03439525529959755
+        },
+        "churn_recall": {
+          "mean": 0.39587628865979374,
+          "std": 0.015429514997005931
+        },
+        "churn_f1": {
+          "mean": 0.5188180681138428,
+          "std": 0.011552065256737694
+        },
+        "roc_auc": {
+          "mean": 0.7460860915174534,
+          "std": 0.020843357465544218
+        },
+        "pr_auc_average_precision": {
+          "mean": 0.5316043805668818,
+          "std": 0.007613840960513469
+        }
+      }
+    }
+  },
+  "served_model": {
+    "path": "random_forest_model.joblib",
+    "fit_rows": 3333,
+    "imputation_values": {
+      "Account length": 101.0,
+      "International plan": 0.0,
+      "Voice mail plan": 0.0,
+      "Number vmail messages": 0.0,
+      "Total day minutes": 179.4,
+      "Total day calls": 101.0,
+      "Total eve minutes": 201.4,
+      "Total eve calls": 100.0,
+      "Total night minutes": 201.2,
+      "Total night calls": 100.0,
+      "Total intl minutes": 10.3,
+      "Total intl calls": 4.0,
+      "Customer service calls": 1.0
+    },
+    "note": "Refit on all rows after the held-out evaluation; use held-out metrics above as the performance estimate."
+  },
+  "versions": {
+    "python": "3.14.6",
+    "scikit_learn": "1.9.0",
+    "pandas": "3.0.3",
+    "joblib": "1.5.3"
+  }
+}
