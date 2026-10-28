@@ -4,10 +4,10 @@ Streamlit research app for exploring telecom customer churn.
 
 ## App features
 
-- Guided chat asks one plain-language question at a time and accepts a rough
-  number, yes/no, or “not sure.” It is a scripted intake flow; the prediction
-  comes from the trained Random Forest, and no external language-model API is
-  connected.
+- Guided chat accepts a natural-language customer description, extracts
+  recognizable details, and follows up on fields it could not identify. A help
+  popover explains the next field and can fill it with a disclosed typical
+  value.
 - Quick form supports direct entry and clearly marks median-filled fields.
 - Batch CSV scoring includes a downloadable template and prediction file.
 - Model evaluation shows held-out metrics, missing-input sensitivity, a
@@ -22,6 +22,11 @@ the number of estimated fields and warns when several details are missing.
 The interface uses 13 customer facts. Four usage-charge fields are derived from
 minutes using the per-minute rates in this telecom dataset. The CSV template
 lists the required input columns.
+
+The chat uses local phrase and number matching for common descriptions (for
+example, “120 daytime minutes” and “three calls to support”). It does not call a
+hosted language model. Details it cannot confidently identify are left for a
+follow-up instead of being guessed.
 
 ## Rebuild and evaluate the model
 

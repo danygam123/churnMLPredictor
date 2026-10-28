@@ -31,8 +31,16 @@ st.markdown(
       .block-container {max-width: 1180px; padding-top: 2.2rem; padding-bottom: 3rem;}
       [data-testid="stMetric"] {background: #f4f7fb; border: 1px solid #e5eaf2;
         padding: 1rem 1.1rem; border-radius: 14px;}
+      [data-testid="stMetric"] [data-testid="stMetricLabel"],
+      [data-testid="stMetric"] [data-testid="stMetricLabel"] *,
+      [data-testid="stMetric"] [data-testid="stMetricValue"],
+      [data-testid="stMetric"] [data-testid="stMetricValue"] *,
+      [data-testid="stMetric"] [data-testid="stMetricDelta"],
+      [data-testid="stMetric"] [data-testid="stMetricDelta"] * {color: #172033 !important;}
       div[data-testid="stChatMessage"] {border: 1px solid #e7ebf1; border-radius: 14px;}
-      .small-note {color: #617082; font-size: 0.92rem;}
+      div[data-testid="stChatInput"] {border: 1px solid #d5deea; border-radius: 16px;}
+      .chat-intro {background: linear-gradient(120deg,#f3f8ff,#f5f3ff); padding: 1rem 1.2rem;
+        border-radius: 16px; border: 1px solid #e4eaf5; margin-bottom: 1rem;}
     </style>
     """,
     unsafe_allow_html=True,
@@ -92,6 +100,7 @@ QUESTIONS = [
     ("Total intl calls", "About how many international calls do they make in a month?"),
     ("Customer service calls", "How many times has this customer called customer support?"),
 ]
+QUESTION_BY_FEATURE = dict(QUESTIONS)
 INTEGER_FIELDS = {
     "Account length",
     "Number vmail messages",
@@ -218,9 +227,157 @@ def parse_answer(feature: str, answer: str) -> tuple[bool, float | None, str | N
     return True, value, None
 
 
+def extract_customer_details(text: str, existing: dict) -> tuple[dict, list[str]]:
+    """Pick out common customer facts from a natural-language description."""
+    profile = dict(existing)
+    found = []
+    word_numbers = {
+        "zero": "0", "one": "1", "two": "2", "three": "3", "four": "4",
+        "five": "5", "six": "6", "seven": "7", "eight": "8", "nine": "9",
+        "ten": "10", "eleven": "11", "twelve": "12", "thirteen": "13",
+        "fourteen": "14", "fifteen": "15", "sixteen": "16", "seventeen": "17",
+        "eighteen": "18", "nineteen": "19", "twenty": "20", "dozen": "12",
+        "couple": "2",
+    }
+    lowered = re.sub(
+        r"\b(?:" + "|".join(word_numbers) + r")\b",
+        lambda match: word_numbers[match.group()],
+        text.lower(),
+    )
+
+    def set_value(feature: str, value: float) -> None:
+        accepted, parsed, _ = parse_answer(feature, str(value))
+        if accepted and parsed is not None:
+            profile[feature] = parsed
+            found.append(feature)
+
+    plan_phrases = {
+        "International plan": ("international",),
+        "Voice mail plan": ("voicemail", "voice mail", "voice-mail"),
+    }
+    for feature, terms in plan_phrases.items():
+        for term in terms:
+            match = re.search(rf"(?:no|without|doesn't have|doesnt have|not on)\s+(?:an?\s+)?{re.escape(term)}\s+(?:calling\s+)?(?:plan|service)?", lowered)
+            positive = re.search(rf"(?:has|have|with|yes|on)\s+(?:an?\s+)?{re.escape(term)}\s+(?:calling\s+)?(?:plan|service)?", lowered)
+            if match:
+                profile[feature] = 0.0
+                found.append(feature)
+                break
+            if positive:
+                profile[feature] = 1.0
+                found.append(feature)
+                break
+            explicit = re.search(rf"{re.escape(term)}\s+(?:calling\s+)?(?:plan|service)\s*(?:is|:)?\s*(yes|no|true|false)", lowered)
+            if explicit:
+                profile[feature] = float(explicit.group(1) in {"yes", "true"})
+                found.append(feature)
+                break
+
+    unknown_matches = list(re.finditer(r"not sure|don't know|dont know|unsure|unknown|skip|\bn/?a\b", lowered))
+    unknown_features = []
+    for unknown in unknown_matches:
+        left_boundaries = [lowered.rfind(mark, 0, unknown.start()) for mark in (".", "?", "!", ";", "\n")]
+        context_start = max(left_boundaries) + 1
+        right_boundaries = [position for mark in (".", "?", "!", ";", "\n") if (position := lowered.find(mark, unknown.end())) >= 0]
+        context_end = min(right_boundaries) if right_boundaries else len(lowered)
+        context = lowered[context_start:context_end]
+        unknown_feature = None
+        if re.search(r"international.{0,20}(?:plan|calling plan)|(?:plan|calling plan).{0,20}international", context):
+            unknown_feature = "International plan"
+        elif re.search(r"voicemail|voice mail|voice-mail", context):
+            unknown_feature = "Number vmail messages" if re.search(r"message|msg", context) else "Voice mail plan"
+        elif re.search(r"customer\s*(?:service|support)|support team|help desk", context):
+            unknown_feature = "Customer service calls"
+        elif re.search(r"account|tenure|time with (?:the )?(?:provider|company)|how long", context):
+            unknown_feature = "Account length"
+        else:
+            period_name = None
+            for period, pattern in (("intl", r"international|intl"), ("eve", r"evening|\beve\b"), ("night", r"night|overnight"), ("day", r"daytime|during the day|\bday\b")):
+                if re.search(pattern, context):
+                    period_name = period
+                    break
+            if period_name:
+                if re.search(r"call", context):
+                    unknown_feature = f"Total {period_name} calls"
+                elif re.search(r"minute|usage|phone use", context):
+                    unknown_feature = f"Total {period_name} minutes"
+        if unknown_feature in INPUT_FEATURES:
+            unknown_features.append(unknown_feature)
+
+    number_tokens = list(re.finditer(r"\b\d+(?:,\d{3})*(?:\.\d+)?\b", lowered))
+    for token in number_tokens:
+        value = float(token.group().replace(",", ""))
+        start, end = token.span()
+        tenure_context = lowered[max(0, start - 55): min(len(lowered), end + 30)]
+        context_start = max(0, start - 15)
+        context = lowered[context_start: min(len(lowered), end + 30)]
+
+        # Tenure is expressed in days, months, or years and gets converted to days.
+        duration = re.match(r"\s*(days?|weeks?|months?|mos?|years?|yrs?)\b", lowered[end:])
+        if duration and re.search(r"account|customer|tenure|with (?:the )?(?:provider|company|us)|been (?:a |an )?(?:customer|subscriber)", tenure_context):
+            unit = duration.group(1)
+            multiplier = 7 if unit.startswith("week") else 30 if unit.startswith(("month", "mo")) else 365 if unit.startswith(("year", "yr")) else 1
+            set_value("Account length", value * multiplier)
+            continue
+
+        if re.search(r"voicemail|voice mail|voice-mail", context) and re.search(r"message|msg", context):
+            set_value("Number vmail messages", value)
+            continue
+        if re.search(r"customer\s*(?:service|support)|support team|help desk", context) and re.search(r"call|contact|time|reach", context):
+            set_value("Customer service calls", value)
+            continue
+
+        period_patterns = {
+            "intl": r"international|intl",
+            "eve": r"evening|\beve\b",
+            "night": r"night|overnight",
+            "day": r"daytime|during the day|\bday\b",
+        }
+        nearest_period = []
+        for period_name, pattern in period_patterns.items():
+            for match in re.finditer(pattern, context):
+                # Compare keyword position to the number within the local context.
+                number_position = start - context_start
+                distance = max(match.start() - number_position, number_position - match.end(), 0)
+                nearest_period.append((distance, period_name))
+        nearest_unit = []
+        following_units = []
+        for unit_match in re.finditer(r"minutes?|mins?|calls?", context):
+            number_position = start - context_start
+            distance = max(unit_match.start() - number_position, number_position - unit_match.end(), 0)
+            unit_entry = (distance, unit_match.group().lower())
+            nearest_unit.append(unit_entry)
+            if 0 <= unit_match.start() - number_position <= 24:
+                following_units.append((unit_match.start() - number_position, unit_match.group().lower()))
+        if not nearest_period or not nearest_unit:
+            continue
+        period = min(nearest_period)[1]
+        unit = min(following_units)[1] if following_units else min(nearest_unit)[1]
+        if unit.startswith(("minute", "min")):
+            feature = f"Total {period} minutes"
+        elif unit.startswith("call"):
+            feature = f"Total {period} calls"
+        else:
+            continue
+        if feature in INPUT_FEATURES:
+            set_value(feature, value)
+
+    for feature in unknown_features:
+        profile[feature] = None
+        found.append(feature)
+
+    # Keep the latest occurrence for each fact so a correction in the user's
+    # latest message replaces an earlier value.
+    latest = {}
+    for feature in found:
+        latest[feature] = profile[feature]
+    profile.update(latest)
+    return profile, list(latest)
+
+
 def reset_chat() -> None:
     st.session_state.chat_messages = [
-        ("assistant", "Hi! I’ll help estimate churn risk using the information you have. I’ll ask one everyday question at a time. If you don’t know something, say “not sure”; I’ll use a typical value and flag that in the result."),
+        ("assistant", "Hey! Tell me about the customer in your own words. You can share a few details at once, like how long they’ve been with the provider, their phone use, plans, or support calls. I’ll pick out what I can and ask only about details I still need. If you’re unsure, just say so."),
     ]
     st.session_state.chat_profile = {}
     st.session_state.chat_step = 0
@@ -288,40 +445,104 @@ def render_guided_chat() -> None:
     for role, message in st.session_state.chat_messages:
         with st.chat_message(role):
             st.markdown(message)
-    if st.session_state.chat_error:
-        st.warning(st.session_state.chat_error)
-
-    step = st.session_state.chat_step
-    if step < len(QUESTIONS):
-        feature, question = QUESTIONS[step]
-        with st.chat_message("assistant"):
-            st.markdown(f"**{question}**")
-            if feature in RANGES:
-                value_range = RANGES[feature]
-                st.caption(f"In this dataset, values range from {value_range['min']:g} to {value_range['max']:g}.")
-        answer = st.chat_input("Type an answer, a rough estimate, or 'not sure'", key="guided_chat_input")
-        if answer:
-            st.session_state.chat_messages.append(("user", answer))
-            accepted, value, error = parse_answer(feature, answer)
-            if not accepted:
-                st.session_state.chat_error = error
-            else:
-                st.session_state.chat_error = None
-                st.session_state.chat_profile[feature] = value
-                st.session_state.chat_step += 1
-                if value is None:
-                    reply = f"No problem. I’ll use a typical value for {FIELD_LABELS[feature].lower()} and mark it as estimated."
-                else:
-                    reply = f"Got it — {FIELD_LABELS[feature].lower()}: {format_value(feature, value)}."
-                st.session_state.chat_messages.append(("assistant", reply))
-                if st.session_state.chat_step >= len(QUESTIONS):
-                    st.session_state.chat_messages.append(("assistant", "Thanks. I have enough to estimate a churn score."))
+    known = {key: value for key, value in st.session_state.chat_profile.items() if value is not None}
+    missing = [feature for feature in INPUT_FEATURES if feature not in st.session_state.chat_profile]
+    if missing:
+        next_feature = missing[0]
+        st.markdown(
+            f"<div class='chat-intro'><b>Next up:</b> {QUESTION_BY_FEATURE[next_feature]} "
+            "You can answer this, share more details, or say “not sure.”</div>",
+            unsafe_allow_html=True,
+        )
+        bounds = RANGES[next_feature]
+        with st.popover("Need help?", use_container_width=False):
+            st.markdown(f"### {FIELD_LABELS[next_feature]}")
+            st.write(help_for_feature(next_feature))
+            st.caption(f"Values in the dataset range from {bounds['min']:g} to {bounds['max']:g}.")
+            st.write(f"Example: {example_for_feature(next_feature)}")
+            if st.button("Use a typical value", key="use_median_help"):
+                st.session_state.chat_profile[next_feature] = None
+                st.session_state.chat_messages.append(("assistant", f"Sure — I’ll estimate {FIELD_LABELS[next_feature].lower()} using a typical dataset value and mark it as estimated."))
                 st.rerun()
+        st.caption(f"I’ve picked up {len(known)} of {len(INPUT_FEATURES)} customer details so far.")
+        prompt = "Describe the customer or add another detail…"
     else:
-        risk_result(st.session_state.chat_profile, "Customer churn estimate")
-        if st.button("Start a new customer interview", key="restart_chat"):
-            reset_chat()
-            st.rerun()
+        st.success("That’s enough information to make an estimate. You can still add or correct details in the chat.")
+        prompt = "Add or correct a detail, or ask a question…"
+
+    answer = st.chat_input(prompt, key="guided_chat_input")
+    if answer:
+        st.session_state.chat_messages.append(("user", answer))
+        profile, updated = extract_customer_details(answer, st.session_state.chat_profile)
+        lowered = answer.lower().strip()
+        parse_error = None
+        # When asked the current short follow-up, attach the answer to that field.
+        unknown_answer = bool(re.fullmatch(r"(?:i'?m )?(?:not sure|unsure|unknown|skip|idk|n/?a|i don't know|dont know|no idea)[.! ]*", lowered))
+        if not updated and missing and unknown_answer:
+            profile[missing[0]] = None
+            updated = [missing[0]]
+        elif not updated and missing and re.search(r"not sure|don't know|dont know|unsure|unknown|skip|\bn/?a\b", lowered):
+            parse_error = "I hear you. Which detail are you unsure about? Mention the type of detail, like nighttime use, plan, tenure, or support calls, so I flag the right one."
+        elif not updated and missing:
+            accepted, value, error = parse_answer(missing[0], answer)
+            if accepted:
+                profile[missing[0]] = value
+                updated = [missing[0]]
+            else:
+                parse_error = error
+
+        st.session_state.chat_profile = profile
+        remaining = [feature for feature in INPUT_FEATURES if feature not in profile]
+        if updated:
+            summary = ", ".join(
+                f"{FIELD_LABELS[feature]}: " + ("not sure" if profile[feature] is None else format_value(feature, profile[feature]))
+                for feature in updated
+            )
+            response = f"Got it — I noted {summary}."
+        elif parse_error:
+            response = parse_error + " Your other details are still saved."
+        else:
+            response = "I’m not sure which customer detail that refers to yet. Try mentioning a time period like daytime, evening, or international, or tap **Need help?** for examples."
+        if remaining:
+            response += f"\n\nI still need {len(remaining)} detail(s). Next: {QUESTION_BY_FEATURE[remaining[0]]}"
+        else:
+            response += "\n\nI have enough details now. I’ll show the estimate below. You can still correct anything by telling me the updated value."
+        st.session_state.chat_messages.append(("assistant", response))
+        st.rerun()
+
+    if st.session_state.chat_profile and len(st.session_state.chat_profile) == len(INPUT_FEATURES):
+        with st.expander("Review details I understood", expanded=True):
+            review = []
+            for feature in INPUT_FEATURES:
+                value = st.session_state.chat_profile[feature]
+                review.append({"Customer detail": FIELD_LABELS[feature], "Your information": "Not sure" if value is None else format_value(feature, value)})
+            st.dataframe(pd.DataFrame(review), hide_index=True, width="stretch")
+            if st.button("Start over", key="restart_chat"):
+                reset_chat()
+                st.rerun()
+        risk_result(st.session_state.chat_profile, "Your churn estimate")
+
+
+def help_for_feature(feature: str) -> str:
+    descriptions = {
+        "Account length": "How long the customer has been with this phone provider. You can answer in days, months, or years.",
+        "International plan": "Whether international calling is included in the customer's plan.",
+        "Voice mail plan": "Whether the customer has the voicemail add-on.",
+        "Number vmail messages": "The number of voicemail messages in a typical month.",
+        "Customer service calls": "How many calls the customer has made to support.",
+    }
+    return descriptions.get(feature, "A rough monthly estimate is fine. You can include a number and say whether it refers to minutes or calls.")
+
+
+def example_for_feature(feature: str) -> str:
+    examples = {
+        "Account length": "They have been with the provider for about 6 months.",
+        "International plan": "They do not have international calling.",
+        "Voice mail plan": "Voicemail is included in their plan.",
+        "Number vmail messages": "They get around 8 voicemail messages each month.",
+        "Customer service calls": "They have called support 3 times.",
+    }
+    return examples.get(feature, "About 120 minutes of daytime phone use each month.")
 
 
 def render_quick_form() -> None:
@@ -518,7 +739,7 @@ def render_project_overview() -> None:
 
 
 st.title("Churn Compass")
-st.write("Explore telecom churn risk with a guided customer interview, direct entry, or batch predictions.")
+st.write("A friendly research assistant for exploring telecom customer churn.")
 st.caption("Research demo · Telecom customer data · Model scores are estimates")
 
 predict_tab, batch_tab, evaluation_tab, overview_tab = st.tabs(
@@ -528,7 +749,13 @@ predict_tab, batch_tab, evaluation_tab, overview_tab = st.tabs(
 with predict_tab:
     mode = st.radio("How would you like to enter customer details?", ["Guided chat", "Quick form"], horizontal=True)
     if mode == "Guided chat":
-        st.caption("This guided interview uses a fixed set of conversational follow-up questions. No customer details are sent to an external chatbot service.")
+        st.caption("Tell me what you know in your own words. I’ll pick out the details, ask a follow-up when needed, and show what I understood before scoring.")
+        with st.expander("A few things you could say"):
+            st.markdown(
+                "- “They have been with the provider for about six months.”\n"
+                "- “No international plan, about 120 daytime minutes, and three calls to support.”\n"
+                "- “I’m not sure about the nighttime usage.”"
+            )
         render_guided_chat()
     else:
         render_quick_form()
