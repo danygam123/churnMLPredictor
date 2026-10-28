@@ -28,7 +28,32 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-      .block-container {max-width: 1180px; padding-top: 2.2rem; padding-bottom: 3rem;}
+      .block-container {max-width: 1320px; padding-top: 1.4rem; padding-bottom: 4rem;}
+      header[data-testid="stHeader"] {background: transparent;}
+      .product-hero {position: relative; overflow: hidden; padding: 1.6rem 1.8rem 1.5rem;
+        border-radius: 24px; margin: .2rem 0 1.25rem;
+        background: radial-gradient(ellipse at 90% 5%, color-mix(in srgb, #5eead4 17%, transparent), transparent 38%),
+          linear-gradient(130deg, color-mix(in srgb, var(--primary-color) 12%, var(--secondary-background-color)), var(--secondary-background-color));
+        border: 1px solid color-mix(in srgb, var(--text-color) 10%, transparent);}
+      .hero-top {display:flex; align-items:center; gap:.75rem; margin-bottom:1.15rem;}
+      .brand-mark {width:42px;height:42px;display:grid;place-items:center;border-radius:14px;
+        background:linear-gradient(145deg,#0f766e,#14b8a6);color:#fff;font-size:1.25rem;box-shadow:0 8px 22px #0f766e35;}
+      .brand-name {font-weight:750;letter-spacing:-.02em;font-size:1.05rem;}
+      .brand-sub {font-size:.75rem;opacity:.65;}
+      .hero-eyebrow {font-size:.75rem;text-transform:uppercase;letter-spacing:.12em;font-weight:750;color:#0f9f91;margin-bottom:.35rem;}
+      .hero-title {font-size:clamp(1.8rem,3.2vw,2.65rem);line-height:1.08;font-weight:780;letter-spacing:-.045em;margin:0 0 .55rem;}
+      .hero-copy {font-size:1rem;opacity:.76;max-width:700px;margin:0;line-height:1.55;}
+      .hero-tags {display:flex;gap:.55rem;flex-wrap:wrap;margin-top:1.1rem;}
+      .hero-tag {border:1px solid color-mix(in srgb,var(--text-color) 12%,transparent);border-radius:999px;
+        padding:.32rem .68rem;font-size:.78rem;background:color-mix(in srgb,var(--background-color) 48%,transparent);}
+      div[data-testid="stTabs"] > div[role="tablist"] {gap:.35rem;border-bottom:1px solid color-mix(in srgb,var(--text-color) 12%,transparent);}
+      button[data-baseweb="tab"] {border-radius:12px 12px 0 0;padding:.7rem 1rem;font-weight:650;}
+      button[data-baseweb="tab"][aria-selected="true"] {background:color-mix(in srgb,var(--primary-color) 10%,var(--secondary-background-color));}
+      div[data-testid="stTabs"] [role="tabpanel"] {padding-top:1.15rem;}
+      h2,h3 {letter-spacing:-.025em;}
+      div.stButton > button {border-radius:12px;transition:transform .18s ease,box-shadow .18s ease;}
+      div.stButton > button:hover {transform:translateY(-1px);box-shadow:0 7px 18px color-mix(in srgb,var(--text-color) 10%,transparent);}
+      div[data-testid="stVerticalBlockBorderWrapper"] {border-radius:18px;}
       [data-testid="stMetric"] {background: var(--secondary-background-color);
         border: 1px solid color-mix(in srgb, var(--text-color) 12%, transparent);
         padding: 1rem 1.1rem; border-radius: 16px; transition: border-color .2s ease, transform .2s ease;}
@@ -46,9 +71,14 @@ st.markdown(
         padding: 1rem 1.2rem; border-radius: 18px;
         border: 1px solid color-mix(in srgb, var(--primary-color) 25%, transparent); margin-bottom: 1rem;}
       .chat-kicker {color: var(--primary-color); font-size: .82rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;}
+      .snapshot-title {font-size:1.12rem;font-weight:750;letter-spacing:-.02em;}
+      .snapshot-empty {padding:1rem;border:1px dashed color-mix(in srgb,var(--text-color) 22%,transparent);border-radius:14px;opacity:.75;}
+      .status-dot {display:inline-block;width:8px;height:8px;border-radius:50%;background:#14b8a6;margin-right:.45rem;}
       @media (max-width: 640px) {
-        .block-container {padding-top: 1rem; padding-left: 1rem; padding-right: 1rem;}
+        .block-container {padding-top: .6rem; padding-left: .8rem; padding-right: .8rem;}
         [data-testid="stMetric"] {padding: .8rem; border-radius: 13px;}
+        .product-hero {padding:1.2rem;border-radius:19px;}
+        button[data-baseweb="tab"] {padding:.55rem .48rem;font-size:.77rem;}
       }
     </style>
     """,
@@ -544,6 +574,32 @@ def render_guided_chat() -> None:
         risk_result(st.session_state.chat_profile, "Your churn estimate")
 
 
+def render_live_snapshot() -> None:
+    if "chat_profile" not in st.session_state:
+        reset_chat()
+    profile = st.session_state.chat_profile
+    known = [key for key, value in profile.items() if value is not None]
+    estimated = [key for key, value in profile.items() if value is None]
+    st.markdown("<div class='snapshot-title'>Customer snapshot</div>", unsafe_allow_html=True)
+    st.caption("Updates as you chat")
+    st.progress(len(profile) / len(INPUT_FEATURES), text=f"{len(profile)} / {len(INPUT_FEATURES)} details")
+    if not profile:
+        st.markdown("<div class='snapshot-empty'>✨ Your customer profile will take shape here as you share details.</div>", unsafe_allow_html=True)
+    else:
+        for feature in INPUT_FEATURES:
+            if feature not in profile:
+                continue
+            value = profile[feature]
+            detail = "Estimated with a typical value" if value is None else format_value(feature, value)
+            st.markdown(f"<span class='status-dot'></span><b>{FIELD_LABELS[feature]}</b><br><span style='opacity:.68'>{detail}</span>", unsafe_allow_html=True)
+            st.write("")
+    if estimated:
+        st.caption(f"{len(estimated)} detail(s) will use typical values and be marked in the result.")
+    with st.expander("How this works"):
+        st.write("Share what you know in everyday language. The assistant maps it to the model’s inputs, asks about missing details, and shows what it understood before scoring.")
+        st.caption("Research demo · results are estimates, not guarantees.")
+
+
 def help_for_feature(feature: str) -> str:
     descriptions = {
         "Account length": "How long the customer has been with this phone provider. You can answer in days, months, or years.",
@@ -759,27 +815,37 @@ def render_project_overview() -> None:
                 )
 
 
-st.title("Churn Compass")
-st.write("A friendly research assistant for exploring telecom customer churn.")
-st.caption("Research demo · Telecom customer data · Model scores are estimates")
+st.markdown(
+    """
+    <div class="product-hero">
+      <div class="hero-top"><div class="brand-mark">✦</div><div><div class="brand-name">Churn Compass</div><div class="brand-sub">CUSTOMER RETENTION INTELLIGENCE</div></div></div>
+      <div class="hero-eyebrow">Understand risk. Start a conversation.</div>
+      <div class="hero-title">A clearer view of customer churn.</div>
+      <p class="hero-copy">Explore a customer profile, get a transparent model estimate, and see the signals behind it — all in one guided workspace.</p>
+      <div class="hero-tags"><span class="hero-tag">✦ Plain-language interview</span><span class="hero-tag">◉ Transparent estimates</span><span class="hero-tag">▦ Research-backed model</span></div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 predict_tab, batch_tab, evaluation_tab, overview_tab = st.tabs(
     ["Predict a customer", "Batch predictions", "Model & evaluation", "Project overview"]
 )
 
 with predict_tab:
-    mode = st.radio("How would you like to enter customer details?", ["Guided chat", "Quick form"], horizontal=True)
+    st.markdown("### Start with a customer")
+    st.caption("Choose a conversation or enter details directly. You can switch whenever you like.")
+    mode = st.radio("Input style", ["Guided chat", "Quick form"], horizontal=True, label_visibility="collapsed")
     if mode == "Guided chat":
-        st.caption("Tell me what you know in your own words. I’ll pick out the details, ask a follow-up when needed, and show what I understood before scoring.")
-        with st.expander("A few things you could say"):
-            st.markdown(
-                "- “They have been with the provider for about six months.”\n"
-                "- “No international plan, about 120 daytime minutes, and three calls to support.”\n"
-                "- “I’m not sure about the nighttime usage.”"
-            )
-        render_guided_chat()
+        chat_col, snapshot_col = st.columns([1.8, 0.82], gap="large")
+        with chat_col:
+            render_guided_chat()
+        with snapshot_col:
+            with st.container(border=True):
+                render_live_snapshot()
     else:
-        render_quick_form()
+        with st.container(border=True):
+            render_quick_form()
 
 with batch_tab:
     render_batch()
