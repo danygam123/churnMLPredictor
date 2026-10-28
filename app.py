@@ -515,7 +515,6 @@ def render_guided_chat() -> None:
                 st.session_state.chat_profile[next_feature] = None
                 st.session_state.chat_messages.append(("assistant", f"Sure — I’ll estimate {FIELD_LABELS[next_feature].lower()} using a typical dataset value and mark it as estimated."))
                 st.rerun()
-        st.progress(len(known) / len(INPUT_FEATURES), text=f"Customer snapshot · {len(known)} of {len(INPUT_FEATURES)} details")
         prompt = "Describe the customer or add another detail…"
     else:
         st.success("That’s enough information to make an estimate. You can still add or correct details in the chat.")
