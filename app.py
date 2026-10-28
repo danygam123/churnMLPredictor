@@ -55,6 +55,9 @@ st.markdown(
       [data-testid="stMetric"]:hover {border-color:color-mix(in srgb,#14b8a6 50%,transparent);}
       [data-testid="stMetric"] [data-testid="stMetricLabel"], [data-testid="stMetric"] [data-testid="stMetricLabel"] *, [data-testid="stMetric"] [data-testid="stMetricValue"], [data-testid="stMetric"] [data-testid="stMetricValue"] *, [data-testid="stMetric"] [data-testid="stMetricDelta"], [data-testid="stMetric"] [data-testid="stMetricDelta"] * {color:var(--text-color) !important;}
       div[data-testid="stChatMessage"] {border:1px solid color-mix(in srgb,var(--text-color) 10%,transparent);border-radius:17px;padding:.35rem .7rem;}
+      div[data-testid="stChatMessageAvatar"] {border-radius:12px!important;border:1px solid color-mix(in srgb,#14b8a6 28%,transparent);box-shadow:0 3px 12px color-mix(in srgb,#14b8a6 12%,transparent);}
+      .chat-speaker {display:flex;align-items:center;gap:.42rem;margin:0 0 .22rem;font-size:.69rem;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:#14b8a6;}
+      .chat-presence {width:7px;height:7px;border-radius:50%;background:#14b8a6;box-shadow:0 0 0 3px color-mix(in srgb,#14b8a6 15%,transparent);}
       div[data-testid="stChatInput"] {border:1px solid color-mix(in srgb,#14b8a6 42%,transparent);border-radius:16px;}
       .chat-intro {background:color-mix(in srgb,#14b8a6 8%,var(--secondary-background-color));padding:.85rem 1rem;border-radius:15px;border:1px solid color-mix(in srgb,#14b8a6 20%,transparent);margin-bottom:.8rem;}
       .chat-kicker {color:#14b8a6;font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;}
@@ -464,7 +467,10 @@ def render_guided_chat() -> None:
     if "chat_messages" not in st.session_state:
         reset_chat()
     for role, message in st.session_state.chat_messages:
-        with st.chat_message(role):
+        avatar = "🧭" if role == "assistant" else "🙂"
+        with st.chat_message(role, avatar=avatar):
+            if role == "assistant":
+                st.markdown("<div class='chat-speaker'><span class='chat-presence'></span>Compass guide</div>", unsafe_allow_html=True)
             st.markdown(message)
     known = {key: value for key, value in st.session_state.chat_profile.items() if value is not None}
     missing = [feature for feature in INPUT_FEATURES if feature not in st.session_state.chat_profile]
