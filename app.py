@@ -28,58 +28,39 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-      .block-container {max-width: 1320px; padding-top: 1.4rem; padding-bottom: 4rem;}
+      .block-container {max-width: 1440px; padding-top: 1.25rem; padding-bottom: 4rem;}
       header[data-testid="stHeader"] {background: transparent;}
-      .product-hero {position: relative; overflow: hidden; padding: 1.6rem 1.8rem 1.5rem;
-        border-radius: 24px; margin: .2rem 0 1.25rem;
-        background: radial-gradient(ellipse at 90% 5%, color-mix(in srgb, #5eead4 17%, transparent), transparent 38%),
-          linear-gradient(130deg, color-mix(in srgb, var(--primary-color) 12%, var(--secondary-background-color)), var(--secondary-background-color));
-        border: 1px solid color-mix(in srgb, var(--text-color) 10%, transparent);}
-      .hero-top {display:flex; align-items:center; gap:.75rem; margin-bottom:1.15rem;}
-      .brand-mark {width:42px;height:42px;display:grid;place-items:center;border-radius:14px;
-        background:linear-gradient(145deg,#0f766e,#14b8a6);color:#fff;font-size:1.25rem;box-shadow:0 8px 22px #0f766e35;}
-      .brand-name {font-weight:750;letter-spacing:-.02em;font-size:1.05rem;}
-      .brand-sub {font-size:.75rem;opacity:.65;}
-      .hero-eyebrow {font-size:.75rem;text-transform:uppercase;letter-spacing:.12em;font-weight:750;color:#0f9f91;margin-bottom:.35rem;}
-      .hero-title {font-size:clamp(1.8rem,3.2vw,2.65rem);line-height:1.08;font-weight:780;letter-spacing:-.045em;margin:0 0 .55rem;}
-      .hero-copy {font-size:1rem;opacity:.76;max-width:700px;margin:0;line-height:1.55;}
-      .hero-tags {display:flex;gap:.55rem;flex-wrap:wrap;margin-top:1.1rem;}
-      .hero-tag {border:1px solid color-mix(in srgb,var(--text-color) 12%,transparent);border-radius:999px;
-        padding:.32rem .68rem;font-size:.78rem;background:color-mix(in srgb,var(--background-color) 48%,transparent);}
-      div[data-testid="stTabs"] > div[role="tablist"] {gap:.35rem;border-bottom:1px solid color-mix(in srgb,var(--text-color) 12%,transparent);}
-      button[data-baseweb="tab"] {border-radius:12px 12px 0 0;padding:.7rem 1rem;font-weight:650;}
-      button[data-baseweb="tab"][aria-selected="true"] {background:color-mix(in srgb,var(--primary-color) 10%,var(--secondary-background-color));}
-      div[data-testid="stTabs"] [role="tabpanel"] {padding-top:1.15rem;}
+      section[data-testid="stSidebar"] {background:linear-gradient(180deg,color-mix(in srgb,#0f766e 9%,var(--background-color)),var(--background-color));border-right:1px solid color-mix(in srgb,var(--text-color) 10%,transparent);}
+      section[data-testid="stSidebar"] > div {padding-top:1.25rem;}
+      .side-brand {display:flex;align-items:center;gap:.7rem;padding:.35rem .2rem 1rem;}
+      .brand-mark {width:38px;height:38px;display:grid;place-items:center;border-radius:12px;background:#0f766e;color:white;font-size:1.15rem;font-weight:800;}
+      .brand-name {font-weight:780;letter-spacing:-.03em;font-size:1rem;}
+      .brand-sub {font-size:.68rem;letter-spacing:.09em;opacity:.6;}
+      .side-label {font-size:.69rem;font-weight:750;letter-spacing:.12em;opacity:.55;margin:.7rem 0 .3rem;}
+      section[data-testid="stSidebar"] div[role="radiogroup"] {gap:.38rem;}
+      section[data-testid="stSidebar"] div[role="radiogroup"] label {border-radius:11px;padding:.48rem .65rem;border:1px solid transparent;}
+      section[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {background:color-mix(in srgb,#0f766e 15%,var(--secondary-background-color));border-color:color-mix(in srgb,#0f766e 27%,transparent);}
+      .page-head {display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.2rem 0 1rem;border-bottom:1px solid color-mix(in srgb,var(--text-color) 12%,transparent);margin-bottom:1.3rem;}
+      .page-eyebrow {font-size:.7rem;letter-spacing:.13em;font-weight:800;color:#0f9f91;margin-bottom:.25rem;}
+      .page-title {font-size:clamp(1.55rem,2.6vw,2.1rem);line-height:1.15;letter-spacing:-.04em;font-weight:780;margin:0;}
+      .page-copy {font-size:.9rem;opacity:.68;margin:.35rem 0 0;}
+      .live-pill {display:inline-flex;align-items:center;gap:.4rem;padding:.38rem .68rem;border-radius:999px;border:1px solid color-mix(in srgb,#14b8a6 35%,transparent);font-size:.73rem;white-space:nowrap;background:color-mix(in srgb,#14b8a6 9%,var(--background-color));}
+      .live-dot {width:7px;height:7px;border-radius:50%;background:#14b8a6;}
       h2,h3 {letter-spacing:-.025em;}
-      div.stButton > button {border-radius:12px;transition:transform .18s ease,box-shadow .18s ease;}
-      div.stButton > button:hover {transform:translateY(-1px);box-shadow:0 7px 18px color-mix(in srgb,var(--text-color) 10%,transparent);}
-      div[data-testid="stVerticalBlockBorderWrapper"] {border-radius:18px;}
-      [data-testid="stMetric"] {background: var(--secondary-background-color);
-        border: 1px solid color-mix(in srgb, var(--text-color) 12%, transparent);
-        padding: 1rem 1.1rem; border-radius: 16px; transition: border-color .2s ease, transform .2s ease;}
-      [data-testid="stMetric"]:hover {border-color: var(--primary-color); transform: translateY(-2px);}
-      [data-testid="stMetric"] [data-testid="stMetricLabel"],
-      [data-testid="stMetric"] [data-testid="stMetricLabel"] *,
-      [data-testid="stMetric"] [data-testid="stMetricValue"],
-      [data-testid="stMetric"] [data-testid="stMetricValue"] *,
-      [data-testid="stMetric"] [data-testid="stMetricDelta"],
-      [data-testid="stMetric"] [data-testid="stMetricDelta"] * {color: var(--text-color) !important;}
-      div[data-testid="stChatMessage"] {border: 1px solid color-mix(in srgb, var(--text-color) 12%, transparent);
-        border-radius: 18px; padding: .4rem .75rem;}
-      div[data-testid="stChatInput"] {border: 1px solid color-mix(in srgb, var(--primary-color) 40%, transparent); border-radius: 18px;}
-      .chat-intro {background: color-mix(in srgb, var(--primary-color) 10%, var(--secondary-background-color));
-        padding: 1rem 1.2rem; border-radius: 18px;
-        border: 1px solid color-mix(in srgb, var(--primary-color) 25%, transparent); margin-bottom: 1rem;}
-      .chat-kicker {color: var(--primary-color); font-size: .82rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;}
-      .snapshot-title {font-size:1.12rem;font-weight:750;letter-spacing:-.02em;}
-      .snapshot-empty {padding:1rem;border:1px dashed color-mix(in srgb,var(--text-color) 22%,transparent);border-radius:14px;opacity:.75;}
-      .status-dot {display:inline-block;width:8px;height:8px;border-radius:50%;background:#14b8a6;margin-right:.45rem;}
-      @media (max-width: 640px) {
-        .block-container {padding-top: .6rem; padding-left: .8rem; padding-right: .8rem;}
-        [data-testid="stMetric"] {padding: .8rem; border-radius: 13px;}
-        .product-hero {padding:1.2rem;border-radius:19px;}
-        button[data-baseweb="tab"] {padding:.55rem .48rem;font-size:.77rem;}
-      }
+      div.stButton > button {border-radius:11px;transition:transform .16s ease,box-shadow .16s ease;}
+      div.stButton > button:hover {transform:translateY(-1px);box-shadow:0 6px 16px color-mix(in srgb,var(--text-color) 10%,transparent);}
+      div[data-testid="stVerticalBlockBorderWrapper"] {border-radius:17px;}
+      [data-testid="stMetric"] {background:var(--secondary-background-color);border:1px solid color-mix(in srgb,var(--text-color) 10%,transparent);padding:.9rem 1rem;border-radius:15px;transition:border-color .18s ease;}
+      [data-testid="stMetric"]:hover {border-color:color-mix(in srgb,#14b8a6 50%,transparent);}
+      [data-testid="stMetric"] [data-testid="stMetricLabel"], [data-testid="stMetric"] [data-testid="stMetricLabel"] *, [data-testid="stMetric"] [data-testid="stMetricValue"], [data-testid="stMetric"] [data-testid="stMetricValue"] *, [data-testid="stMetric"] [data-testid="stMetricDelta"], [data-testid="stMetric"] [data-testid="stMetricDelta"] * {color:var(--text-color) !important;}
+      div[data-testid="stChatMessage"] {border:1px solid color-mix(in srgb,var(--text-color) 10%,transparent);border-radius:17px;padding:.35rem .7rem;}
+      div[data-testid="stChatInput"] {border:1px solid color-mix(in srgb,#14b8a6 42%,transparent);border-radius:16px;}
+      .chat-intro {background:color-mix(in srgb,#14b8a6 8%,var(--secondary-background-color));padding:.85rem 1rem;border-radius:15px;border:1px solid color-mix(in srgb,#14b8a6 20%,transparent);margin-bottom:.8rem;}
+      .chat-kicker {color:#14b8a6;font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;}
+      .snapshot-title {font-size:1.05rem;font-weight:750;letter-spacing:-.02em;}
+      .snapshot-empty {padding:.9rem;border:1px dashed color-mix(in srgb,var(--text-color) 20%,transparent);border-radius:13px;opacity:.72;font-size:.9rem;}
+      .status-dot {display:inline-block;width:7px;height:7px;border-radius:50%;background:#14b8a6;margin-right:.45rem;}
+      @media (max-width: 760px) {.block-container{padding-top:.6rem;padding-left:.8rem;padding-right:.8rem}.page-head{align-items:flex-start}.live-pill{font-size:.66rem}}
     </style>
     """,
     unsafe_allow_html=True,
@@ -814,28 +795,38 @@ def render_project_overview() -> None:
                 )
 
 
+with st.sidebar:
+    st.markdown(
+        "<div class='side-brand'><div class='brand-mark'>✦</div><div><div class='brand-name'>Churn Compass</div><div class='brand-sub'>CUSTOMER INTELLIGENCE</div></div></div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown("<div class='side-label'>WORKSPACE</div>", unsafe_allow_html=True)
+    selected_page = st.radio(
+        "Workspace",
+        ["Predict", "Batch scoring", "Model performance", "Project info"],
+        label_visibility="collapsed",
+        key="workspace_navigation",
+    )
+    st.divider()
+    st.markdown("<div class='side-label'>ABOUT THIS DEMO</div>", unsafe_allow_html=True)
+    st.caption("A research prototype for exploring telecom customer churn.")
+    st.caption(f"{metadata['dataset']['rows']:,} source records · 13 customer details")
+
+page_details = {
+    "Predict": ("CUSTOMER WORKSPACE", "Customer risk", "Describe a customer in your own words and explore an estimated churn score."),
+    "Batch scoring": ("BATCH WORKSPACE", "Score a customer list", "Upload a CSV to explore predictions across multiple customer profiles."),
+    "Model performance": ("MODEL TRANSPARENCY", "How the model performs", "Review held-out results, missing-detail sensitivity, and the patterns the model uses."),
+    "Project info": ("PROJECT NOTES", "About this research", "Explore the data, approach, and intended limits of this project."),
+}
+eyebrow, title, subtitle = page_details[selected_page]
 st.markdown(
-    """
-    <div class="product-hero">
-      <div class="hero-top"><div class="brand-mark">✦</div><div><div class="brand-name">Churn Compass</div><div class="brand-sub">CUSTOMER RETENTION INTELLIGENCE</div></div></div>
-      <div class="hero-eyebrow">Understand risk. Start a conversation.</div>
-      <div class="hero-title">A clearer view of customer churn.</div>
-      <p class="hero-copy">Explore a customer profile, get a transparent model estimate, and see the signals behind it — all in one guided workspace.</p>
-      <div class="hero-tags"><span class="hero-tag">✦ Plain-language interview</span><span class="hero-tag">◉ Transparent estimates</span><span class="hero-tag">▦ Research-backed model</span></div>
-    </div>
-    """,
+    f"<div class='page-head'><div><div class='page-eyebrow'>{eyebrow}</div><h1 class='page-title'>{title}</h1><p class='page-copy'>{subtitle}</p></div><div class='live-pill'><span class='live-dot'></span> Research preview</div></div>",
     unsafe_allow_html=True,
 )
 
-predict_tab, batch_tab, evaluation_tab, overview_tab = st.tabs(
-    ["Predict a customer", "Batch predictions", "Model & evaluation", "Project overview"]
-)
-
-with predict_tab:
-    st.markdown("### Start with a customer")
-    st.caption("Choose a conversation or enter details directly. You can switch whenever you like.")
-    mode = st.radio("Input style", ["Guided chat", "Quick form"], horizontal=True, label_visibility="collapsed")
-    if mode == "Guided chat":
+if selected_page == "Predict":
+    mode = st.radio("Choose your starting point", ["Chat with Compass", "Quick form"], horizontal=True, label_visibility="collapsed")
+    if mode == "Chat with Compass":
         chat_col, snapshot_col = st.columns([1.8, 0.82], gap="large")
         with chat_col:
             render_guided_chat()
@@ -843,14 +834,18 @@ with predict_tab:
             with st.container(border=True):
                 render_live_snapshot()
     else:
-        with st.container(border=True):
-            render_quick_form()
-
-with batch_tab:
+        form_col, tips_col = st.columns([1.55, 1], gap="large")
+        with form_col:
+            with st.container(border=True):
+                render_quick_form()
+        with tips_col:
+            with st.container(border=True):
+                st.markdown("### A helpful starting point")
+                st.write("A rough estimate is okay. If you leave a detail blank, the model uses a typical value from its training data and marks that estimate in the result.")
+                st.info("This prototype is trained on telecom customer records. Scores are estimates for research and exploration.")
+elif selected_page == "Batch scoring":
     render_batch()
-
-with evaluation_tab:
+elif selected_page == "Model performance":
     render_model_evaluation()
-
-with overview_tab:
+else:
     render_project_overview()
