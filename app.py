@@ -29,18 +29,27 @@ st.markdown(
     """
     <style>
       .block-container {max-width: 1180px; padding-top: 2.2rem; padding-bottom: 3rem;}
-      [data-testid="stMetric"] {background: #f4f7fb; border: 1px solid #e5eaf2;
-        padding: 1rem 1.1rem; border-radius: 14px;}
+      [data-testid="stMetric"] {background: var(--secondary-background-color);
+        border: 1px solid color-mix(in srgb, var(--text-color) 12%, transparent);
+        padding: 1rem 1.1rem; border-radius: 16px; transition: border-color .2s ease, transform .2s ease;}
+      [data-testid="stMetric"]:hover {border-color: var(--primary-color); transform: translateY(-2px);}
       [data-testid="stMetric"] [data-testid="stMetricLabel"],
       [data-testid="stMetric"] [data-testid="stMetricLabel"] *,
       [data-testid="stMetric"] [data-testid="stMetricValue"],
       [data-testid="stMetric"] [data-testid="stMetricValue"] *,
       [data-testid="stMetric"] [data-testid="stMetricDelta"],
-      [data-testid="stMetric"] [data-testid="stMetricDelta"] * {color: #172033 !important;}
-      div[data-testid="stChatMessage"] {border: 1px solid #e7ebf1; border-radius: 14px;}
-      div[data-testid="stChatInput"] {border: 1px solid #d5deea; border-radius: 16px;}
-      .chat-intro {background: linear-gradient(120deg,#f3f8ff,#f5f3ff); padding: 1rem 1.2rem;
-        border-radius: 16px; border: 1px solid #e4eaf5; margin-bottom: 1rem;}
+      [data-testid="stMetric"] [data-testid="stMetricDelta"] * {color: var(--text-color) !important;}
+      div[data-testid="stChatMessage"] {border: 1px solid color-mix(in srgb, var(--text-color) 12%, transparent);
+        border-radius: 18px; padding: .4rem .75rem;}
+      div[data-testid="stChatInput"] {border: 1px solid color-mix(in srgb, var(--primary-color) 40%, transparent); border-radius: 18px;}
+      .chat-intro {background: color-mix(in srgb, var(--primary-color) 10%, var(--secondary-background-color));
+        padding: 1rem 1.2rem; border-radius: 18px;
+        border: 1px solid color-mix(in srgb, var(--primary-color) 25%, transparent); margin-bottom: 1rem;}
+      .chat-kicker {color: var(--primary-color); font-size: .82rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;}
+      @media (max-width: 640px) {
+        .block-container {padding-top: 1rem; padding-left: 1rem; padding-right: 1rem;}
+        [data-testid="stMetric"] {padding: .8rem; border-radius: 13px;}
+      }
     </style>
     """,
     unsafe_allow_html=True,
@@ -450,10 +459,22 @@ def render_guided_chat() -> None:
     if missing:
         next_feature = missing[0]
         st.markdown(
-            f"<div class='chat-intro'><b>Next up:</b> {QUESTION_BY_FEATURE[next_feature]} "
-            "You can answer this, share more details, or say “not sure.”</div>",
+            "<div class='chat-intro'><div class='chat-kicker'>Your customer interview</div>"
+            "<b>Tell me what you know.</b> There’s no special format — share a few details at once, "
+            "skip anything you don’t know, and I’ll guide you from there.</div>",
             unsafe_allow_html=True,
         )
+        st.markdown("**Try a quick start**")
+        quick_starts = [
+            ("☎️ Phone use", "They use about 120 minutes during the day and 80 minutes in the evening."),
+            ("🧭 Plans & tenure", "They have been with the provider for about 2 years, no international plan, voicemail plan yes."),
+            ("💬 Support", "They have called customer support 3 times. I’m not sure about the rest."),
+        ]
+        cols = st.columns(len(quick_starts))
+        for col, (label, message) in zip(cols, quick_starts):
+            if col.button(label, key=f"quick_start_{label}", use_container_width=True):
+                st.session_state.guided_chat_input = message
+                st.rerun()
         bounds = RANGES[next_feature]
         with st.popover("Need help?", use_container_width=False):
             st.markdown(f"### {FIELD_LABELS[next_feature]}")
@@ -464,7 +485,7 @@ def render_guided_chat() -> None:
                 st.session_state.chat_profile[next_feature] = None
                 st.session_state.chat_messages.append(("assistant", f"Sure — I’ll estimate {FIELD_LABELS[next_feature].lower()} using a typical dataset value and mark it as estimated."))
                 st.rerun()
-        st.caption(f"I’ve picked up {len(known)} of {len(INPUT_FEATURES)} customer details so far.")
+        st.progress(len(known) / len(INPUT_FEATURES), text=f"Customer snapshot · {len(known)} of {len(INPUT_FEATURES)} details")
         prompt = "Describe the customer or add another detail…"
     else:
         st.success("That’s enough information to make an estimate. You can still add or correct details in the chat.")
