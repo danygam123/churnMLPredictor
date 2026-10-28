@@ -30,6 +30,7 @@ st.markdown(
     <style>
       .block-container {max-width: 1440px; padding-top: 1.25rem; padding-bottom: 4rem;}
       header[data-testid="stHeader"] {background: transparent;}
+      footer {visibility:hidden;height:0;}
       section[data-testid="stSidebar"] {background:linear-gradient(180deg,color-mix(in srgb,#0f766e 9%,var(--background-color)),var(--background-color));border-right:1px solid color-mix(in srgb,var(--text-color) 10%,transparent);}
       section[data-testid="stSidebar"] > div {padding-top:1.25rem;}
       .side-brand {display:flex;align-items:center;gap:.7rem;padding:.35rem .2rem 1rem;}
