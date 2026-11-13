@@ -1,0 +1,381 @@
+{
+  "created_at_utc": "2026-11-13T23:45:00.916975+00:00",
+  "champion_model_name": "HistGradientBoosting (Default)",
+  "optimal_threshold": 0.07727272727272727,
+  "default_threshold": 0.5,
+  "dataset": {
+    "source": "Telecom Customer Churn Research Dataset",
+    "files": {
+      "churn-80.csv": "b8bbd0099748ba3b0f337538cfa5997b5255bdc23c35144ffabba3cafb192550",
+      "churn-20.csv": "c73bb8e7a47c8fced62ddef54741bbbc4005243fb40a65996360337844fd17f7"
+    },
+    "total_rows": 3333,
+    "feature_count": 17,
+    "input_feature_count": 13,
+    "churn_rows": 483,
+    "churn_rate": 0.14491449144914492
+  },
+  "features": [
+    "Account length",
+    "International plan",
+    "Voice mail plan",
+    "Number vmail messages",
+    "Total day minutes",
+    "Total day calls",
+    "Total day charge",
+    "Total eve minutes",
+    "Total eve calls",
+    "Total eve charge",
+    "Total night minutes",
+    "Total night calls",
+    "Total night charge",
+    "Total intl minutes",
+    "Total intl calls",
+    "Total intl charge",
+    "Customer service calls"
+  ],
+  "input_features": [
+    "Account length",
+    "International plan",
+    "Voice mail plan",
+    "Number vmail messages",
+    "Total day minutes",
+    "Total day calls",
+    "Total eve minutes",
+    "Total eve calls",
+    "Total night minutes",
+    "Total night calls",
+    "Total intl minutes",
+    "Total intl calls",
+    "Customer service calls"
+  ],
+  "input_ranges": {
+    "Account length": {
+      "min": 1.0,
+      "max": 243.0,
+      "median": 101.0
+    },
+    "International plan": {
+      "min": 0.0,
+      "max": 1.0,
+      "median": 0.0
+    },
+    "Voice mail plan": {
+      "min": 0.0,
+      "max": 1.0,
+      "median": 0.0
+    },
+    "Number vmail messages": {
+      "min": 0.0,
+      "max": 51.0,
+      "median": 0.0
+    },
+    "Total day minutes": {
+      "min": 0.0,
+      "max": 350.8,
+      "median": 179.4
+    },
+    "Total day calls": {
+      "min": 0.0,
+      "max": 165.0,
+      "median": 101.0
+    },
+    "Total eve minutes": {
+      "min": 0.0,
+      "max": 363.7,
+      "median": 201.4
+    },
+    "Total eve calls": {
+      "min": 0.0,
+      "max": 170.0,
+      "median": 100.0
+    },
+    "Total night minutes": {
+      "min": 23.2,
+      "max": 395.0,
+      "median": 201.2
+    },
+    "Total night calls": {
+      "min": 33.0,
+      "max": 175.0,
+      "median": 100.0
+    },
+    "Total intl minutes": {
+      "min": 0.0,
+      "max": 20.0,
+      "median": 10.3
+    },
+    "Total intl calls": {
+      "min": 0.0,
+      "max": 20.0,
+      "median": 4.0
+    },
+    "Customer service calls": {
+      "min": 0.0,
+      "max": 9.0,
+      "median": 1.0
+    }
+  },
+  "business_cost_framework": {
+    "cost_false_negative": 500.0,
+    "cost_false_positive": 50.0
+  },
+  "held_out_test_metrics": {
+    "at_default_0_50": {
+      "threshold": 0.5,
+      "accuracy": 0.9535232383808095,
+      "precision": 0.9583333333333334,
+      "recall": 0.711340206185567,
+      "f1": 0.8165680473372781,
+      "roc_auc": 0.9349430276722734,
+      "pr_auc": 0.8851772564773959,
+      "brier_score": 0.039685350412961555,
+      "confusion_matrix": [
+        [
+          567,
+          3
+        ],
+        [
+          28,
+          69
+        ]
+      ],
+      "tn": 567,
+      "fp": 3,
+      "fn": 28,
+      "tp": 69,
+      "business_cost": 14150.0,
+      "baseline_cost": 48500.0,
+      "cost_savings": 34350.0
+    },
+    "at_optimal_threshold": {
+      "threshold": 0.07727272727272727,
+      "accuracy": 0.9460269865067467,
+      "precision": 0.7904761904761904,
+      "recall": 0.8556701030927835,
+      "f1": 0.8217821782178217,
+      "roc_auc": 0.9349430276722734,
+      "pr_auc": 0.8851772564773959,
+      "brier_score": 0.039685350412961555,
+      "confusion_matrix": [
+        [
+          548,
+          22
+        ],
+        [
+          14,
+          83
+        ]
+      ],
+      "tn": 548,
+      "fp": 22,
+      "fn": 14,
+      "tp": 83,
+      "business_cost": 8100.0,
+      "baseline_cost": 48500.0,
+      "cost_savings": 40400.0
+    }
+  },
+  "cv_benchmark_summary": {
+    "Dummy (Majority Class)": {
+      "accuracy": 0.8552138034508627,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "roc_auc": 0.5,
+      "pr_auc": 0.1447861965491373,
+      "brier_score": 0.1447861965491373
+    },
+    "Logistic Regression (Default)": {
+      "accuracy": 0.8642160540135033,
+      "precision": 0.5857142857142857,
+      "recall": 0.21243523316062177,
+      "f1": 0.311787072243346,
+      "roc_auc": 0.8050586310335424,
+      "pr_auc": 0.44813217102137176,
+      "brier_score": 0.1004395474166658
+    },
+    "Logistic Regression (Balanced)": {
+      "accuracy": 0.7693173293323331,
+      "precision": 0.3577639751552795,
+      "recall": 0.7461139896373057,
+      "f1": 0.4836272040302267,
+      "roc_auc": 0.8127999727297518,
+      "pr_auc": 0.4301671261062313,
+      "brier_score": 0.1722210747989059
+    },
+    "Random Forest (Default)": {
+      "accuracy": 0.9482370592648162,
+      "precision": 0.9217687074829932,
+      "recall": 0.7020725388601037,
+      "f1": 0.7970588235294118,
+      "roc_auc": 0.903494568675575,
+      "pr_auc": 0.8529392567575255,
+      "brier_score": 0.04802949612792299
+    },
+    "Random Forest (Balanced)": {
+      "accuracy": 0.9497374343585896,
+      "precision": 0.8579545454545454,
+      "recall": 0.7823834196891192,
+      "f1": 0.8184281842818428,
+      "roc_auc": 0.9006499409144623,
+      "pr_auc": 0.8385556454214441,
+      "brier_score": 0.053889322132956836
+    },
+    "HistGradientBoosting (Default)": {
+      "accuracy": 0.9553638409602401,
+      "precision": 0.9377049180327869,
+      "recall": 0.7409326424870466,
+      "f1": 0.8277858176555717,
+      "roc_auc": 0.9090616762112536,
+      "pr_auc": 0.8581437432026492,
+      "brier_score": 0.0396329793329852
+    },
+    "HistGradientBoosting (Balanced)": {
+      "accuracy": 0.9501125281320331,
+      "precision": 0.8731563421828908,
+      "recall": 0.7668393782383419,
+      "f1": 0.8165517241379311,
+      "roc_auc": 0.9014589582765205,
+      "pr_auc": 0.8541438337434141,
+      "brier_score": 0.04205519057440012
+    },
+    "XGBoost (Default)": {
+      "accuracy": 0.9516129032258065,
+      "precision": 0.9105431309904153,
+      "recall": 0.7383419689119171,
+      "f1": 0.8154506437768241,
+      "roc_auc": 0.9062255704026906,
+      "pr_auc": 0.8542462801295403,
+      "brier_score": 0.04127930504371192
+    },
+    "XGBoost (Balanced / scale_pos_weight)": {
+      "accuracy": 0.9456114028507127,
+      "precision": 0.8283378746594006,
+      "recall": 0.7875647668393783,
+      "f1": 0.8074369189907038,
+      "roc_auc": 0.9070027724752295,
+      "pr_auc": 0.850419703770868,
+      "brier_score": 0.04857215289354812
+    },
+    "LightGBM (Default)": {
+      "accuracy": 0.9512378094523631,
+      "precision": 0.9295302013422819,
+      "recall": 0.7176165803108808,
+      "f1": 0.8099415204678363,
+      "roc_auc": 0.9013726024906827,
+      "pr_auc": 0.8449400297348165,
+      "brier_score": 0.04233912406729102
+    },
+    "LightGBM (Balanced)": {
+      "accuracy": 0.9474868717179294,
+      "precision": 0.8455056179775281,
+      "recall": 0.7797927461139896,
+      "f1": 0.8113207547169812,
+      "roc_auc": 0.9026724843196073,
+      "pr_auc": 0.8489263321283892,
+      "brier_score": 0.04554651726426214
+    }
+  },
+  "calibration": {
+    "uncalibrated": {
+      "brier_score": 0.039685350412961555,
+      "expected_calibration_error": 0.030143608027793187,
+      "prob_true": [
+        0.028119507908611598,
+        0.4166666666666667,
+        0.4,
+        0.5,
+        1.0,
+        0.8,
+        0.8333333333333334,
+        1.0,
+        0.9,
+        1.0
+      ],
+      "prob_pred": [
+        0.010644866315483222,
+        0.15626952247407835,
+        0.25524645364021914,
+        0.3806287234657546,
+        0.41309171614530227,
+        0.5550344469108941,
+        0.6428823780482625,
+        0.767485669998585,
+        0.8522403629733504,
+        0.9822919051849804
+      ]
+    },
+    "sigmoid_platt": {
+      "brier_score": 0.04059037691537848,
+      "expected_calibration_error": 0.03134694402282662,
+      "prob_true": [
+        0.020872865275142316,
+        0.1,
+        0.4,
+        0.8,
+        0.5555555555555556,
+        0.5714285714285714,
+        1.0,
+        0.875,
+        1.0,
+        1.0
+      ],
+      "prob_pred": [
+        0.03291384087206229,
+        0.13277963226798617,
+        0.2434394817315695,
+        0.32752827567788945,
+        0.43913713091383516,
+        0.5442879715642936,
+        0.6411462846584857,
+        0.7406896407856683,
+        0.8540877275827873,
+        0.9553651124718517
+      ]
+    },
+    "isotonic": {
+      "brier_score": 0.039642574639311576,
+      "expected_calibration_error": 0.026569214080852725,
+      "prob_true": [
+        0.021505376344086023,
+        0.47058823529411764,
+        0.3,
+        0.75,
+        0.5,
+        0.75,
+        0.6,
+        1.0,
+        1.0,
+        0.9791666666666666
+      ],
+      "prob_pred": [
+        0.03150428301888743,
+        0.14778662426643882,
+        0.24291632123098603,
+        0.35583873498595453,
+        0.43763411558333104,
+        0.557815456795961,
+        0.6259908058467463,
+        0.7576270772758412,
+        0.8684269429233566,
+        0.9759857372708746
+      ]
+    },
+    "recommendation": {
+      "best_method": "isotonic",
+      "raw_brier": 0.039685350412961555,
+      "best_brier": 0.039642574639311576,
+      "brier_improvement": 4.2775773649979254e-05,
+      "should_calibrate": false
+    }
+  },
+  "versions": {
+    "python": "3.14.6",
+    "scikit_learn": "1.9.0",
+    "pandas": "3.0.3",
+    "joblib": "1.5.3",
+    "xgboost": "3.4.1",
+    "lightgbm": "4.7.0"
+  }
+}
