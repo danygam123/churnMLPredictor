@@ -1,6 +1,6 @@
 # C.R.A.M. V2 — Comprehensive Model Evaluation & Benchmark Report
 
-**Generated**: 2026-11-13 23:45:00 UTC  
+**Generated**: 2026-11-14 00:16:23 UTC  
 **Repository Branch**: `v2-final-development`  
 **Evaluation Methodology**: 5-Fold Stratified Cross-Validation on Train Split (80%) + Held-Out Test Split (20%)  
 
@@ -20,7 +20,7 @@ The following table compares all candidate architectures evaluated on the traini
 | **HistGradientBoosting (Default)** | 93.77% | 74.09% | 82.78% | 85.81% | 90.91% | 0.0396 | $50,950 |
 | **HistGradientBoosting (Balanced)** | 87.32% | 76.68% | 81.66% | 85.41% | 90.15% | 0.0421 | $47,150 |
 | **XGBoost (Default)** | 91.05% | 73.83% | 81.55% | 85.42% | 90.62% | 0.0413 | $51,900 |
-| **XGBoost (Balanced / scale_pos_weight)** | 82.83% | 78.76% | 80.74% | 85.04% | 90.70% | 0.0486 | $44,150 |
+| **XGBoost (Balanced / scale_pos_weight)** | 80.80% | 78.50% | 79.63% | 85.10% | 90.82% | 0.0487 | $45,100 |
 | **LightGBM (Default)** | 92.95% | 71.76% | 80.99% | 84.49% | 90.14% | 0.0423 | $55,550 |
 | **LightGBM (Balanced)** | 84.55% | 77.98% | 81.13% | 84.89% | 90.27% | 0.0455 | $45,250 |
 

@@ -331,14 +331,14 @@ def main() -> None:
 
     # 1. Load data
     X, y, hashes = load_raw_dataset()
-    imbalance_ratio = float((len(y) - y.sum()) / y.sum())
-    logger.info(f"Loaded dataset: {len(X)} records, {y.sum()} churners ({y.mean():.2%}). Imbalance ratio: {imbalance_ratio:.2f}")
+    logger.info(f"Loaded dataset: {len(X)} records, {y.sum()} churners ({y.mean():.2%}).")
 
     # 2. Strict train / test split
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=y
     )
-    logger.info(f"Train rows: {len(X_train)} | Test rows: {len(X_test)} (held-out)")
+    imbalance_ratio = float((len(y_train) - y_train.sum()) / y_train.sum())
+    logger.info(f"Train rows: {len(X_train)} (imbalance ratio: {imbalance_ratio:.2f}) | Test rows: {len(X_test)} (held-out)")
 
     # 3. Benchmark all candidate models on Train via 5-Fold CV
     benchmark_results, fitted_pipelines = run_benchmark(X_train, y_train, imbalance_ratio)
@@ -384,7 +384,12 @@ def main() -> None:
         report_file,
     )
 
-    # 8. Refit Champion Pipeline on Full Dataset for Serving
+    # 8. Save Train-Only Evaluation Checkpoint (for 100% reproducible test verification)
+    eval_model_path = MODELS_DIR / "champion_model_evaluation.joblib"
+    joblib.dump(champion_pipeline, eval_model_path, compress=3)
+    logger.info(f"Saved train-only evaluation model to {eval_model_path}")
+
+    # 9. Refit Champion Pipeline on Full Dataset for Serving
     logger.info("Refitting Champion pipeline on full dataset (3,333 records) for serving...")
     full_champion = Pipeline(steps=[
         ("preprocessor", champion_pipeline.named_steps["preprocessor"]),
@@ -392,10 +397,10 @@ def main() -> None:
     ])
     full_champion.fit(X, y)
 
-    # 9. Save Artifacts & Metadata
-    model_path = MODELS_DIR / "champion_churn_model.joblib"
-    joblib.dump(full_champion, model_path, compress=3)
-    logger.info(f"Saved champion model to {model_path}")
+    # Save Production Serving Model
+    served_model_path = MODELS_DIR / "champion_churn_model.joblib"
+    joblib.dump(full_champion, served_model_path, compress=3)
+    logger.info(f"Saved production serving model to {served_model_path}")
 
     # Calculate ranges and medians for metadata
     input_ranges = {
@@ -412,6 +417,11 @@ def main() -> None:
         "champion_model_name": champion_name,
         "optimal_threshold": float(optimal_thresh),
         "default_threshold": 0.50,
+        "artifacts": {
+            "evaluation_checkpoint": "champion_model_evaluation.joblib",
+            "production_served_model": "champion_churn_model.joblib",
+            "note": "Use champion_model_evaluation.joblib to reproduce held-out test metrics exactly; champion_churn_model.joblib is refit on full 3,333 records for deployment.",
+        },
         "dataset": {
             "source": "Telecom Customer Churn Research Dataset",
             "files": hashes,
@@ -458,13 +468,6 @@ def main() -> None:
     metadata_path = MODELS_DIR / "model_metadata.json"
     metadata_path.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
     logger.info(f"Saved metadata to {metadata_path}")
-
-    # Backwards compatibility sync if requested or standard
-    root_joblib = ROOT / "random_forest_model.joblib"
-    root_metadata = ROOT / "model_metadata.json"
-    # Copy champion to root so app.py and Vercel continue working
-    joblib.dump(full_champion, root_joblib, compress=3)
-    logger.info(f"Synchronized root {root_joblib.name} for backwards compatibility.")
 
 
 if __name__ == "__main__":

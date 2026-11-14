@@ -1,8 +1,13 @@
 {
-  "created_at_utc": "2026-11-13T23:45:00.916975+00:00",
+  "created_at_utc": "2026-11-14T00:16:23.937132+00:00",
   "champion_model_name": "HistGradientBoosting (Default)",
   "optimal_threshold": 0.07727272727272727,
   "default_threshold": 0.5,
+  "artifacts": {
+    "evaluation_checkpoint": "champion_model_evaluation.joblib",
+    "production_served_model": "champion_churn_model.joblib",
+    "note": "Use champion_model_evaluation.joblib to reproduce held-out test metrics exactly; champion_churn_model.joblib is refit on full 3,333 records for deployment."
+  },
   "dataset": {
     "source": "Telecom Customer Churn Research Dataset",
     "files": {
@@ -250,13 +255,13 @@
       "brier_score": 0.04127930504371192
     },
     "XGBoost (Balanced / scale_pos_weight)": {
-      "accuracy": 0.9456114028507127,
-      "precision": 0.8283378746594006,
-      "recall": 0.7875647668393783,
-      "f1": 0.8074369189907038,
-      "roc_auc": 0.9070027724752295,
-      "pr_auc": 0.850419703770868,
-      "brier_score": 0.04857215289354812
+      "accuracy": 0.9418604651162791,
+      "precision": 0.808,
+      "recall": 0.7849740932642487,
+      "f1": 0.7963206307490145,
+      "roc_auc": 0.9081753931460776,
+      "pr_auc": 0.8509867304136185,
+      "brier_score": 0.04873275908139417
     },
     "LightGBM (Default)": {
       "accuracy": 0.9512378094523631,
