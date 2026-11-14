@@ -29,6 +29,7 @@ ROOT = Path(__file__).resolve().parent.parent
 MODELS_DIR = ROOT / "models"
 MODEL_PATH = MODELS_DIR / "champion_churn_model.joblib"
 METADATA_PATH = MODELS_DIR / "model_metadata.json"
+EXPLANATION_REFERENCE_PATH = MODELS_DIR / "explanation_reference.csv"
 
 # Fallback to root paths if not yet in models/
 if not MODEL_PATH.exists() and (ROOT / "random_forest_model.joblib").exists():
@@ -60,6 +61,7 @@ class ChurnPredictor:
             col: info["median"] for col, info in self.ranges.items()
         } if self.ranges else {}
         self.validator = CustomerDataValidator()
+        self._explainer = None
 
     def categorize_risk(
         self,
@@ -134,6 +136,39 @@ class ChurnPredictor:
             signals.sort(key=lambda s: abs(s["score_delta_vs_typical"]), reverse=True)
             result["top_sensitivity_signals"] = signals[:5]
 
+        return result
+
+    def explain_single(self, customer_profile: Dict[str, Any], background_data: Optional[pd.DataFrame] = None) -> Dict[str, Any]:
+        """Return a SHAP explanation against the fixed V2 serving reference population.
+
+        Custom background data is rejected so a cached explainer cannot silently use
+        a different population from the one a caller just supplied. For offline
+        analyses with custom populations, use ``ChurnExplainer`` directly.
+        """
+        if background_data is not None:
+            raise ValueError(
+                "Serving explanations use the fixed reference population at "
+                f"{EXPLANATION_REFERENCE_PATH}. Custom backgrounds are not accepted; "
+                "use ChurnExplainer directly for offline analyses."
+            )
+        if self._explainer is None:
+            if not EXPLANATION_REFERENCE_PATH.exists():
+                raise FileNotFoundError(
+                    "The fixed V2 SHAP reference population is missing: "
+                    f"{EXPLANATION_REFERENCE_PATH}"
+                )
+            from ml.explain import ChurnExplainer
+
+            serving_reference = pd.read_csv(EXPLANATION_REFERENCE_PATH)
+            self._explainer = ChurnExplainer(self.model, serving_reference)
+        result = self._explainer.explain(customer_profile)
+        result["risk_category"] = self.categorize_risk(result["churn_probability"])
+        result["prediction"] = (
+            "Likely to churn"
+            if result["churn_probability"] >= self.optimal_threshold
+            else "Less likely to churn"
+        )
+        result["decision_threshold_used"] = self.optimal_threshold
         return result
 
     def predict_batch(
