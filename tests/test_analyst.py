@@ -465,6 +465,97 @@ def test_grounding_validator_rejects_unsupported_numbers():
     assert reason is not None and "41.3" in reason
 
 
+# ---------------------------------------------------------------------------
+# Remediation regressions (F-1, F-2, F-3 from the Phase 6 review)
+# ---------------------------------------------------------------------------
+
+
+def _labeled_portfolio_without_groupable_columns():
+    """Valid observed labels, but every column is constant or has >25 distinct values."""
+    frame = pd.DataFrame(
+        {
+            "Account length": list(range(30)),  # 30 distinct -> ungroupable
+            "Churn_Probability": [0.001 + i * 0.0001 for i in range(30)],  # ungroupable
+            "Observed_Churn": pd.array([False] * 30, dtype="boolean"),  # single value -> excluded
+        }
+    )
+    return PortfolioResult(
+        customers=frame,
+        warnings=[],
+        label_column_present=True,
+        id_source_column=None,
+        prediction_threshold=0.0773,
+        risk_thresholds=RiskThresholds(medium_threshold=0.0773, high_threshold=0.5),
+    )
+
+
+def test_keyword_churn_rate_without_groupable_columns_is_honest(portfolio):
+    # Positive control: with groupable columns, "churn rate" routes to the first candidate.
+    context = analyst.build_context(portfolio)
+    function, arguments, _ = analyst._keyword_plan("what is the churn rate?", context)
+    assert function == "churn_by_dimension"
+    assert arguments["column"] == context.dimension_candidates[0]
+
+    # F-1 regression: the exact failure scenario — labels but zero groupable columns.
+    context_bare = analyst.build_context(_labeled_portfolio_without_groupable_columns())
+    assert context_bare.has_observed_labels
+    assert context_bare.dimension_candidates == []
+    function, arguments, note = analyst._keyword_plan("what is the churn rate here?", context_bare)
+    assert function is None
+    assert arguments == {}
+    assert note and "group" in note.casefold()
+
+
+def test_churn_rate_question_without_groupable_columns_answers_gracefully():
+    answer = analyst.answer_question(
+        _labeled_portfolio_without_groupable_columns(), "what is the churn rate here?", None
+    )
+    assert answer.status == "facts_only"
+    assert answer.function is None
+    assert answer.note and "group" in answer.note.casefold()
+    assert answer.facts is None
+
+
+def test_unexpected_computation_error_is_reported_not_raised(portfolio, no_api_key, monkeypatch):
+    def broken(customers, context):
+        raise RuntimeError("boom")
+
+    monkeypatch.setitem(analyst.FUNCTIONS, "portfolio_overview", {"fn": broken, "args": {}})
+    answer = analyst.answer_question(portfolio, "How many customers are predicted to churn?", None)
+    assert answer.status == "error"
+    assert "could not complete this analysis" in answer.note
+    assert answer.facts is None
+
+
+def test_grounding_rejects_percent_variants_for_values_above_one():
+    facts = {"customers_analyzed": 8, "predicted_churners": 2}
+    for token in ("800", "800.0", "800,000", "200", "20.0"):
+        reason = analyst.validate_grounding(f"That equals {token}.", facts)
+        assert reason is not None, token
+    # Boundary: exactly 1.0 is a share and may be quoted as 100%.
+    share = {"completion_share": 1.0}
+    assert analyst.validate_grounding("The share is 100%.", share) is None
+    assert analyst.validate_grounding("The share is 100.0%.", share) is None
+
+
+def test_grounding_allows_legitimate_percent_and_decimal_forms():
+    whole = {"observed_churn_rate": 0.25}
+    assert analyst.validate_grounding("25% churn rate.", whole) is None
+    assert analyst.validate_grounding("25.0% churn rate.", whole) is None
+    decimal = {"prediction_threshold": 0.0773}
+    assert analyst.validate_grounding("7.7% decision threshold.", decimal) is None
+    assert analyst.validate_grounding("7.73% decision threshold.", decimal) is None
+    assert analyst.validate_grounding("About 41.3% will churn.", decimal) is not None
+
+
+def test_grounding_rejects_sign_flipped_claims():
+    positive = {"customers_analyzed": 8}
+    assert analyst.validate_grounding("About -8 customers will churn.", positive) is not None
+    negative = {"standardized_difference": -0.5}
+    assert analyst.validate_grounding("The standardized difference is -0.5.", negative) is None
+    assert analyst.validate_grounding("The standardized difference is 0.5.", negative) is not None
+
+
 def test_default_transport_maps_timeout_and_rate_limit(monkeypatch):
     def raise_timeout(*args, **kwargs):
         raise requests.Timeout("too slow")

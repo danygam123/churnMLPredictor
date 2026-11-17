@@ -118,3 +118,20 @@ function: register it in `FUNCTIONS`, keep it pure over `customers`/`context`, r
 `{"facts": ..., "caveats": ...}`, raise `ValueError` with a user-actionable message when the data
 cannot support it, and add both a correctness test and a routing/grounding test. Never let a code
 path send computed facts to the LLM for computation, and never display an unvalidated explanation.
+
+---
+
+## 12. Remediation addendum (2026-11-16)
+
+Findings F-1/F-2/F-3 from `PHASE_6_FINAL_REVIEW_AND_PHASE_7_READINESS.md` were fixed under user
+authorization (see `PHASE_6_REMEDIATION_REPORT.md` for root causes and evidence):
+
+- `_keyword_plan` can no longer emit `churn_by_dimension` without a column; a labeled dataset with
+  zero groupable columns now yields an honest cannot-route note, and `answer_question` converts
+  unexpected computation exceptions into a graceful `error` status.
+- `_add_number_variants` generates percent forms only for values in `(0, 1]`.
+- `validate_grounding` requires exact signed matches (a positive fact cannot authorize a negative
+  claim, and vice versa).
+
+Test totals after remediation: **42 analyst tests, 85 total, 0 failures**. The §7 guidance above is
+unchanged and now includes these three regressions as examples of the required paired tests.

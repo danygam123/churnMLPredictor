@@ -58,3 +58,17 @@ authorized session.
 
 **Sign-off:** Phase 6 acceptance criteria are met by the evidence above. The feature is ready for
 user review on the local branch; any push/deployment remains a separate user-authorized action.
+
+---
+
+## 5. Remediation sign-off (2026-11-16)
+
+Following the independent review (`PHASE_6_FINAL_REVIEW_AND_PHASE_7_READINESS.md`, verdict
+PASS WITH FINDINGS), findings F-1 (unhandled `TypeError` on a labeled zero-groupable-column
+dataset), F-2 (spurious percent variants for values > 1), and F-3 (sign-flipped numerals passing
+grounding) were fixed under explicit user authorization. All three reproduction probes now pass,
+six regression tests were added, and the full suite reruns at **85 passed, 0 failed**. The
+eight-function whitelist, two-call LLM architecture, credential handling, and all preservation
+guarantees are unchanged. Details: `PHASE_6_REMEDIATION_REPORT.md`. Phase 6 remains COMPLETE;
+the Phase 7 readiness gate ("READY AFTER FIXES") is satisfied pending the user's review of the
+remediation and authorization to commit.

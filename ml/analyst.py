@@ -528,7 +528,13 @@ def _keyword_plan(question: str, context: AnalystContext) -> Tuple[Optional[str]
     if dimension:
         return "churn_by_dimension", {"column": dimension}, None
     if context.has_observed_labels and ("churn rate" in text or "highest churn" in text):
-        return "churn_by_dimension", {"column": context.dimension_candidates[0]} if context.dimension_candidates else {}, None
+        if context.dimension_candidates:
+            return "churn_by_dimension", {"column": context.dimension_candidates[0]}, None
+        return None, {}, (
+            "This dataset has valid churn labels, but no column with a small number of distinct "
+            "values is available to group by, so a churn-rate-by-group comparison is not supported. "
+            "Ask about the overview, high-risk profile, or probability distribution instead."
+        )
     return None, {}, (
         "Without the LLM planner configured, I can only route simple keyword questions. "
         "Rephrase using words like overview, high-risk, distribution, or a grouping column such as "
@@ -656,14 +662,15 @@ def _add_number_variants(value: float, allowed: set) -> None:
         f"{value:,.0f}",
         f"{value:,.1f}",
         f"{value:,.2f}",
-        f"{value * 100:.1f}",
-        f"{value * 100:.2f}",
-        f"{value * 100:,.1f}",
     ):
         allowed.add(candidate)
     if 0 < value <= 1:
-        # Share/probability values may legitimately be quoted as whole percents.
+        # Share/probability/rate values may legitimately be quoted as
+        # percentages; counts and other values above 1 may not.
         allowed.add(f"{value * 100:.0f}")
+        allowed.add(f"{value * 100:.1f}")
+        allowed.add(f"{value * 100:.2f}")
+        allowed.add(f"{value * 100:,.1f}")
 
 
 _NUMBER_TOKEN = re.compile(r"-?\d[\d,]*(?:\.\d+)?")
@@ -675,9 +682,10 @@ def validate_grounding(explanation: str, facts: Dict[str, Any]) -> Optional[str]
     _collect_numbers(facts, allowed)
     for token in _NUMBER_TOKEN.findall(explanation):
         normalized = token.replace(",", "").rstrip(".")
+        # Exact match only: a positive fact must not authorize a negative
+        # claim, and vice versa. Signed variants are pre-generated for facts
+        # that are themselves negative.
         if normalized in allowed:
-            continue
-        if normalized.lstrip("-") in allowed:
             continue
         return f"unsupported number '{token}'"
     return None
@@ -870,6 +878,12 @@ def answer_question(
         result = _execute(function, arguments, customers, context)
     except ValueError as exc:
         return finish("cannot_answer", function=function, note=str(exc))
+    except Exception:  # defense-in-depth: computation must never crash the run
+        return finish(
+            "error",
+            function=function,
+            note="The dashboard could not complete this analysis safely. Please try a different question.",
+        )
 
     facts = result.get("facts", {})
     caveats = list(result.get("caveats", []))

@@ -56,3 +56,15 @@ After implementation, `git diff 06f0fecc907a5da72d332c4d1761ae836fafa8c2 -- app.
 5. The Gemini planner/explainer quality depends on the provider; every structured output is validated and every explanation is grounding-checked regardless.
 6. Sub-500-character questions are truncated rather than rejected; extremely long questions lose their tail.
 7. `Observed_Churn` grouping was deliberately excluded from groupable dimensions (grouping by the outcome label is not a segment comparison).
+
+---
+
+## 6. Remediation addendum (2026-11-16)
+
+The independent review (`PHASE_6_FINAL_REVIEW_AND_PHASE_7_READINESS.md`) confirmed three findings, all fixed and re-verified:
+
+- **F-1 (Medium):** keyword-planner fallback could return `churn_by_dimension` with empty arguments for a labeled dataset with zero groupable columns, raising an uncaught `TypeError`. Fixed: the fallback now returns an honest cannot-route note; `answer_question` additionally converts any unexpected computation exception into a graceful `error` status (defense-in-depth). Reproduction probe now returns `status=facts_only` with a user-friendly note — no exception.
+- **F-2 (Low–Medium):** percent variants were generated for values > 1, letting a count of 8 authorize "800.0". Fixed: all `value * 100` variants are now gated to `0 < value <= 1`; legitimate whole-percent ("25%"), decimal-percent ("7.7%", "7.73%"), and the 1.0 → "100%" boundary are preserved by test.
+- **F-3 (Low):** sign-flipped numerals passed grounding ("-8" for a fact of 8). Fixed: exact signed match only; legitimate negative facts (e.g. `standardized_difference: -0.5`) still validate via their pre-generated signed variants.
+
+Six regression tests were added (42 analyst tests total; full suite now **85 passed, 0 failed**). The documentation claims in §1–§5 above remain accurate except that the test totals cited there reflect the pre-remediation state (36 analyst / 79 total); current totals are 42 analyst / 85 total.
