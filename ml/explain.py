@@ -173,6 +173,8 @@ class ChurnExplainer:
     def save_beeswarm(explanation: shap.Explanation, output_path: Union[str, Path]) -> Path:
         """Render and save a SHAP beeswarm plot; matplotlib is required."""
         try:
+            import matplotlib
+            matplotlib.use("Agg", force=True)
             import matplotlib.pyplot as plt
         except ImportError as exc:
             raise RuntimeError("Beeswarm plotting requires matplotlib") from exc
@@ -188,6 +190,8 @@ class ChurnExplainer:
     def save_waterfall(local_explanation: Dict[str, Any], output_path: Union[str, Path]) -> Path:
         """Render and save a local SHAP waterfall plot from explain() output."""
         try:
+            import matplotlib
+            matplotlib.use("Agg", force=True)
             import matplotlib.pyplot as plt
         except ImportError as exc:
             raise RuntimeError("Waterfall plotting requires matplotlib") from exc

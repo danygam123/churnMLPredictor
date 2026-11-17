@@ -67,13 +67,21 @@ class ChurnPredictor:
         self,
         probability: float,
         high_threshold: Optional[float] = None,
-        low_threshold: float = 0.20,
+        low_threshold: Optional[float] = None,
     ) -> str:
-        """Categorizes customer into risk tiers: High, Medium, Low."""
-        high = high_threshold if high_threshold is not None else self.optimal_threshold
+        """Assigns risk bands separately from the binary churn decision.
+
+        Defaults anchor High Risk at the Phase 1 default 0.50 cutoff and
+        Medium Risk at the Phase 1 cost-optimized threshold. ``low_threshold``
+        remains the legacy argument name for the Medium Risk lower bound.
+        """
+        high = high_threshold if high_threshold is not None else self.default_threshold
+        medium = low_threshold if low_threshold is not None else self.optimal_threshold
+        if not (0.0 <= medium < high <= 1.0):
+            raise ValueError("Risk thresholds must satisfy 0 <= medium < high <= 1")
         if probability >= high:
             return "High Risk"
-        elif probability >= low_threshold:
+        elif probability >= medium:
             return "Medium Risk"
         else:
             return "Low Risk"
@@ -102,7 +110,7 @@ class ChurnPredictor:
         probs = self.model.predict_proba(cleaned_df)[0]
         churn_prob = float(probs[1]) if len(probs) > 1 else float(probs[0])
         prediction_label = "Likely to churn" if churn_prob >= thresh else "Less likely to churn"
-        risk_category = self.categorize_risk(churn_prob, high_threshold=thresh)
+        risk_category = self.categorize_risk(churn_prob)
 
         result: Dict[str, Any] = {
             "churn_probability": churn_prob,
@@ -188,7 +196,7 @@ class ChurnPredictor:
         results = data.copy()
         results["Churn_Probability"] = np.round(probs, 4)
         results["Risk_Category"] = [
-            self.categorize_risk(p, high_threshold=thresh) for p in probs
+            self.categorize_risk(p) for p in probs
         ]
         results["Prediction"] = np.where(probs >= thresh, "Likely to churn", "Less likely to churn")
         results["Estimated_Input_Count"] = missing_counts

@@ -52,3 +52,52 @@ show that the model generalizes to other industries or customer populations.
 ```powershell
 streamlit run app.py
 ```
+
+## Run the local C.R.A.M. V2 risk dashboard
+
+The Phase 3 customer-risk workspace is a separate Streamlit entry point so the
+existing V1 interface remains available unchanged:
+
+```powershell
+venv\Scripts\python.exe -m streamlit run v2_app.py
+```
+
+Upload a CSV containing the 13 model inputs. A `Customer ID` column is optional
+(temporary row identifiers are used when absent), and an optional `Churn`
+column enables observed-rate summaries. Risk bands use the Phase 1 validation
+thresholds by default and can be adjusted in the sidebar. These bands are
+separate from the binary churn prediction threshold. The dashboard labels
+missing dataset fields rather than inventing contract, payment-method, tenure,
+or monthly-bill values; for the current telecom schema it uses account length
+and the model's derived usage-charge total as explicitly named proxies.
+
+Phase 4 adds transparent, rule-based retention review suggestions to the V2
+portfolio and customer profile. The current evidence-based rules flag repeated
+support contacts for a human review of the support experience and elevated
+international usage when no international plan is recorded for a human plan-fit
+review. Recommendations are available only to Medium or High Risk customers
+whose probability meets the Phase 1 prediction threshold, and only when an
+accepted observed characteristic matches a rule. Portfolio matches are
+generated cheaply; local SHAP context is attached when a customer profile is
+opened, so the app does not calculate SHAP for every uploaded customer during
+ordinary portfolio rendering.
+
+These suggestions are hypotheses, require human approval, and are not
+automatically sent to customers or applied to accounts. SHAP values describe
+how features influenced this model's probability relative to its fixed Phase 2
+reference; they do not show that an action causes churn reduction. The source
+model has no verified contract type, customer tenure, payment method, monthly
+invoice, satisfaction, or issue-resolution fields. See
+[`PHASE_4_FINAL_HANDOFF.md`](PHASE_4_FINAL_HANDOFF.md) for rule thresholds,
+priority logic, caveats, and verification evidence.
+
+Phase 5 adds an interactive What-If Simulation Lab to V2. From an uploaded
+customer profile, create up to three independent scenarios, vary supported
+model inputs, reset or remove scenarios, and compare model probabilities with
+the original baseline. Only the existing 13 validated inputs are editable;
+customer IDs, observed churn labels, and derived charge fields are not. The
+simulation uses the current serving model and pipeline and is predictive, not
+causal. A different model probability does not prove that a real business
+action would produce that result. See
+[`PHASE_5_FINAL_HANDOFF.md`](PHASE_5_FINAL_HANDOFF.md) for the editable inputs,
+validation domains, scenario behavior, and limitations.
