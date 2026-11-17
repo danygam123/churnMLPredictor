@@ -1,8 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
+    "api/analyst.py": {
+      "maxDuration": 30
+    },
     "api/**/*.py": {
-      "includeFiles": "{model_metadata.json,random_forest_model.joblib,model_features.py}"
+      "includeFiles": "{model_metadata.json,random_forest_model.joblib,model_features.py,_engine.py,ml/*.py,models/*}"
     }
   }
 }

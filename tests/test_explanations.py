@@ -108,7 +108,7 @@ def test_serving_explainer_uses_one_fixed_reference_and_rejects_overrides():
     predictor = ChurnPredictor()
     result = predictor.explain_single(_sample())
     cached = predictor._explainer
-    expected = pd.read_csv("models/explanation_reference.csv")
+    expected = pd.read_csv("vercel-app/models/explanation_reference.csv")
 
     assert expected.shape == (50, len(INPUT_FEATURES))
     assert list(expected.columns) == INPUT_FEATURES

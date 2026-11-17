@@ -2,3 +2,10 @@ joblib==1.5.3
 numpy==2.5.0
 pandas==3.0.3
 scikit-learn==1.9.0
+scipy==1.18.0
+shap==0.54.1
+requests==2.34.2
+cloudpickle==3.1.2
+slicer==0.0.8
+tqdm==4.70.1
+packaging==26.2

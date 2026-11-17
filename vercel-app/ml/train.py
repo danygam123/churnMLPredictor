@@ -58,9 +58,19 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger(__name__)
 
 ROOT = Path(__file__).resolve().parent.parent
-RAW_DIR = ROOT / "data" / "raw"
-MODELS_DIR = ROOT / "models"
-DOCS_DIR = ROOT / "docs"
+# The training engine normally lives beside the deployment app (vercel-app/),
+# while the raw research data, trained artifacts, and phase documentation stay in
+# the repository root. Search upward so offline scripts work from either home.
+def _find_repo_root(start: Path) -> Path:
+    for candidate in [start, *start.parents]:
+        if (candidate / "data" / "raw" / "churn-80.csv").exists():
+            return candidate
+    return start
+
+REPO_ROOT = _find_repo_root(ROOT)
+RAW_DIR = REPO_ROOT / "data" / "raw"
+MODELS_DIR = REPO_ROOT / "models"
+DOCS_DIR = REPO_ROOT / "docs"
 
 TEST_SIZE = 0.20
 RANDOM_STATE = 42

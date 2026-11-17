@@ -338,3 +338,183 @@ Start from `PHASE_6_FINAL_HANDOFF.md` §11 ("Next Codex — Phase 6 orientation"
 `ml/analyst.py`. Preserve the whitelist registry, argument validation, two-call LLM flow, and
 grounding validator as invariants. Maintenance backlog from §8 (artifact gap, threshold grid
 floor, dependency warnings) still applies and remains unfinished.
+
+---
+
+## 12. Phase 7 addendum — Final SaaS experience (2026-11-16, current session)
+
+*Appended 2026-11-16 by the Phase 7 engineering session. Sections 1–11 above are historical
+records of earlier phases and were not modified. Phase 7 work is in the working tree and is
+NOT committed; the user must authorize the commit after review.*
+
+### 12.1 What was built
+
+The complete Phase 7 (roadmap Steps 9.1–9.6, pages 17–20) was implemented in one continuous
+assignment on top of `cb86df6`:
+
+- **Architecture:** `v2_app.py` rewritten as a 30-line thin entry (page config, sidebar,
+  native `st.navigation` over exactly eight `st.Page` entries with stable url_paths). New
+  `v2_shared.py` (419 lines: session contract, `load_predictor_safe`, upload precheck
+  `validate_upload_bytes`, cached parsing/analysis, dataset activation/clearing, sidebar with
+  compact uploader + portfolio filters, filtered view, explanation cache, export helpers) and
+  `v2_pages/` with eight `render()` modules (overview, customers, customer_insights,
+  retention_strategies, simulation_lab, ai_analyst, model_center, settings).
+- **Design (9.1):** `.streamlit/config.toml` — deep-navy surfaces (#0b1220 / #111a2e), blue
+  accent (#3b82f6), light text; risk-band colors red/amber/green via altair scales.
+- **Onboarding + sample (9.3):** first-run workflow on Overview; tracked de-identified
+  `assets/sample_customers.csv` (80 rows, 24 churners, synthetic IDs, geography dropped,
+  `random_state=42` from the public benchmark split) + `assets/README.md` provenance;
+  one-click load on Overview and Settings; sample passes the same validation as uploads.
+- **Upload validation (9.4):** friendly precheck (10 MB limit, readability, non-empty, all 13
+  required columns named on failure) gates activation so incompatible files never replace a
+  working dataset or reach the model; schema quirks disclosed on Settings; Phase 3
+  `CustomerDataValidator` untouched as the per-value authority; schema documented on Settings
+  and Model Center.
+- **Exports (9.5):** customer predictions/risk classifications (`cram_customer_risk_results.csv`),
+  per-customer SHAP explanations (`cram_shap_explanation_<ID>.csv`), retention recommendations
+  (`cram_customer_recommendations.csv`), analytics summary (`cram_analytics_summary.csv`),
+  global feature importance (`cram_global_feature_importance.csv`) — all filter- and
+  dataset-aware, no new dependencies. PDF report deferred as an optional enhancement
+  (dependency unjustified; documented).
+- **Reliability/security (9.6):** `load_predictor_safe` friendly model-failure handling on
+  every consuming path; uploads session-only (never on disk, never logged); clear-session on
+  sidebar + Settings; session isolation by design (user state in `st.session_state` only;
+  shared caches content-keyed model resources); secrets never displayed/logged with a safe
+  configured-indicator; schema documentation.
+- **Phase 6 carry-forward:** F-4 provider-privacy disclosure (AI Analyst + Settings, accurate
+  wording), F-7 defensive analyst error handling (unexpected failures become session answers),
+  F-8 bounded chat history (10 entries) + clear action, F-9 latency UX (staged spinner, no
+  empty submissions, labeled fallbacks). `ml/analyst.py` NOT modified; whitelist, planner
+  validation, grounding, and credential handling intact.
+- **Tests:** `tests/test_v2_app.py` rewritten — 35 AppTests covering navigation (8 pages),
+  onboarding/sample, upload success/failure modes (missing columns, invalid values, malformed,
+  empty, oversized, no-replacement), filters/search/exports, the ported simulation regression,
+  analyst facts-only + mocked-LLM + bounded-chat + defensive-error flows, privacy
+  disclosures, model-load failure, threshold reclassification, clear-session, and schema docs.
+  AppTest page switching uses `app._page_hash = calc_hash(url_path)` (verified empirically;
+  query-param switching does not work).
+
+### 12.2 Verification record
+
+- Full suite: **115 passed, 0 failed, 0 skipped** (80 Phase 2–6 tests unchanged; 35 Phase 7
+  AppTests replace the 5 single-page ones; 85-test Phase 6 baseline preserved). Warnings
+  5,233 — same pre-existing joblib/NumPy-2.5 categories.
+- Live manual review: all eight pages driven in Chromium against a real `streamlit run`
+  server with the sample dataset — metrics matched the sample (80/24/28.3%/24/30.0%);
+  Customer Insights SHAP verified live; no unhandled error screens. Screenshots unavailable
+  (no visible desktop window); walkthrough recorded in `PHASE_7_FINAL_VERIFICATION.md` §2.
+- Protected preservation re-verified: `git diff 06f0fecc907a5da72d332c4d1761ae836fafa8c2 HEAD
+  -- app.py train_model.py model_features.py random_forest_model.joblib model_metadata.json
+  models vercel-app` is **empty** (all 28 artifacts byte-identical). No retraining.
+- Zero new dependencies (`requirements.txt` unchanged).
+- Live Gemini API verification remains outstanding (mocked-only, per standing policy).
+
+### 12.3 Work-tree state after Phase 7
+
+Modified: `tests/test_v2_app.py`, `v2_app.py` (752 → 30 lines). New: `.streamlit/config.toml`,
+`assets/sample_customers.csv`, `assets/README.md`, `v2_shared.py`, `v2_pages/` (9 files), plus
+the three `PHASE_7_FINAL_*.md` documents and this addendum. `cram-v2-phase5-complete`,
+`stash@{0}`, and `codex/phase2-signed-off-backup` intact. **Nothing committed, pushed, merged,
+or deployed; Phase 8 not started.** The commit awaits user authorization.
+
+
+---
+
+## 13. Migration addendum — Vercel production release (2026-11-16, current session)
+
+*Appended 2026-11-16 by the migration session, per the "FINAL VERCEL MIGRATION, PRODUCT
+INTEGRATION & PRODUCTION RELEASE" authorization. Section 12 above records the Phase 7
+Streamlit state; this section records its retirement into the deployed Vercel application.*
+
+### 13.1 What was built
+
+The complete C.R.A.M. V2 functionality (Phases 2–7) now runs in the existing production
+Vercel project ("Churn Compass", Root Directory `vercel-app`), preserving its identity
+(teal accent, deep navy surfaces, Manrope/DM Sans, sidebar + breadcrumb patterns, guided
+interview, customer snapshot, research-preview positioning). New semantic green/amber/red
+tokens were added only for the risk-band system.
+
+- **Engine relocation:** `ml/` moved via `git mv` to `vercel-app/ml/`; the four V2 artifacts
+  (`champion_churn_model.joblib`, `champion_model_evaluation.joblib`,
+  `explanation_reference.csv`, `model_metadata.json`) moved to `vercel-app/models/`.
+  `ml/train.py` searches upward for the repo root so offline training still works, and a
+  repo-root `conftest.py` puts `vercel-app` on `sys.path` for the test suite. Root V1
+  artifacts (`random_forest_model.joblib`, `model_metadata.json`, `model_features.py`) are
+  byte-identical (`git ls-tree` blobs re-verified during this session).
+- **Serverless endpoints:** shared `_engine.py` at the `vercel-app` task root (the proven
+  `model_features.py` bundling pattern) plus six endpoints: `api/score.py`, `api/explain.py`,
+  `api/analyze.py` (full-CSV mode + rows re-band mode), `api/recommend.py`, `api/simulate.py`,
+  `api/analyst.py` (GET status exposes only `provider.configured`; 12 s per LLM call,
+  `maxDuration` 30). No retraining; the V2 champion "HistGradientBoosting (Default)" serves
+  from `vercel-app/models/model_metadata.json` with its held-out operating points,
+  calibration, cost framework (FN $500 / FP $50), and CV benchmark record — Model
+  Performance computes no new numbers.
+- **Production semantics:** the binary decision stays at `BINARY_DECISION_THRESHOLD = 0.5`
+  ("Likely / less likely"), applied uniformly in score/explain/analyze/simulate
+  (`_production_decision` overwrites the engine's stored operating point in `analyze`).
+  V2 risk bands (Low/Medium/High, `RiskThresholds`, metadata defaults 0.07727/0.5) are
+  separate and session-adjustable. The 0.0773 threshold appears only as an evaluated
+  operating point on Model Performance.
+- **Uploads:** the Phase 7 precheck is ported with documented production limits — 4 MB CSV
+  text and 10,000 rows, chosen against Vercel's 4.5 MB request/response limits. A rejected
+  upload never replaces the working dataset; the sample dataset loads in one click from
+  `public/sample_customers.csv`; the five export families are all present.
+- **Client:** single client shell extended to the eight-entry navigation (Predict, Portfolio,
+  Customers, Retention Strategies, Simulation Lab, AI Analyst, Model Performance, Project
+  Info/Settings). Small deterministic engine semantics (risk-band classification, portfolio
+  summary arithmetic, Phase 7 filters) are mirrored in `lib/portfolio.ts` for instant
+  display; the server remains authoritative for all model work and exports.
+- **SHAP in serverless (empirically resolved):** shap 0.54.1 has no numba/llvmlite hard
+  dependency (~4 MB total); the champion pipeline is 146 KB, so explanations run in-function.
+
+### 13.2 Verification record (Gates A–B)
+
+- **Python suite: 103 passed, 0 failed** — the 23-test `tests/test_vercel_api.py` layer
+  covers analyze (full + re-band), score, explain, recommend, simulate, analyst
+  (facts-only + status privacy), and JSON-safety; the 35 Streamlit AppTests were retired
+  with the Streamlit UI. Pre-existing joblib/NumPy-2.5 warnings unchanged.
+- **Frontend: 24 Vitest unit tests** pin the mirrored semantics (classify boundaries at
+  `>=`, summary arithmetic, group rates, filters, CSV parsing/quoting, export shapes).
+- **E2E: 13 Playwright journeys pass** (chat interview, unknown-detail disclosure, quick
+  form, SHAP on demand, sample load, rejected-upload preservation, search/filter/export,
+  customer detail + Simulation Lab hand-off, retention groups, scenario comparison,
+  facts-only analyst, V2 operating-point record, settings + clear-session). The harness
+  serves the real Python handlers behind a local proxy, so the journeys exercise the
+  production code paths. All six endpoints were additionally exercised over real HTTP
+  (status 200, correct semantics) before the suite was written.
+- `npm run typecheck` clean; `npm run build` green.
+- **Next.js security upgrade:** 16.4.3 was flagged by the framework for GHSA-mfr8-8qww-v76h
+  (moderate; information disclosure across root params with `use cache`/`unstable_cache`).
+  Upgraded to 16.4.6 in a background worktree, verified there (pre-retirement suite +
+  build green), merged, and re-verified in place; `npm audit` reports 0 vulnerabilities.
+  The app does not use the affected APIs.
+- **Credential safety:** no key material in the client bundle; `GEMINI_API_KEY`/
+  `GOOGLE_API_KEY` are read server-side from the environment only, and no `.env`/secret
+  files are tracked.
+
+### 13.3 Streamlit retirement (Gate C)
+
+After parity was proven, `app.py`, `v2_app.py`, `v2_shared.py`, `v2_pages/`, `.streamlit/`,
+and `tests/test_v2_app.py` were removed (user-confirmed full retirement; the V1 app
+included, recoverable in git history). `requirements.txt` drops Streamlit and its
+exclusive dependencies (altair, pydeck, pyarrow, blinker, watchdog); training-era
+dependencies (lightgbm, xgboost, matplotlib) remain. The engine, the sample dataset
+(`assets/` + `public/sample_customers.csv`), all artifacts, and the Phase 1–7 documents
+are kept.
+
+### 13.4 Deployment notes (Gate D)
+
+- Deployment flows through the existing GitHub-linked Vercel project with Root Directory
+  `vercel-app`; production branch `main` (previously at `9f5edb6`). No second Vercel
+  project, no force-push. Branch flow: work on `v2-final-development`, then merge to
+  `main`.
+- `vercel-app/vercel.json` bundles the engine into every Python function
+  (`_engine.py`, `ml/*.py`, `models/*`, plus the protected V1 files) and sets
+  `api/analyst.py` `maxDuration` 30.
+- `vercel-app/requirements.txt` pins the deployment stack (adds shap 0.54.1, requests,
+  scipy, cloudpickle, slicer, tqdm, packaging).
+- `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) is the only environment variable the AI Analyst
+  needs; without it the analyst runs in facts-only mode. No credentials are invented here.
+- Post-deploy verification: check `/` renders, `/api/score` GET returns ready,
+  `/api/analyze` scores the sample, and the analyst status endpoint reports the
+  configured/unconfigured state accurately.
