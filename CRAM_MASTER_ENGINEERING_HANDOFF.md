@@ -270,3 +270,71 @@ Protected original files/artifacts: `app.py`, root V1 model files, `models/champ
 The current branch is `v2-final-development` at `4cdd6a8`; Phases 3–5 changes are uncommitted and unstaged, and a Phase 2 backup branch and stash exist. First inspect `git status --short`, `git diff`, `git diff --cached`, untracked files, then read `PHASE_5_FINAL_INDEPENDENT_REVIEW.md` and the latest Phase 3/4/5 reports. Do not reset, clean, push, merge, deploy, or start Phase 6 without explicit authorization.
 
 Recommended immediate task: perform user-approved final integration/readiness review and resolve delivery strategy for the existing uncommitted work. Keep model probabilities, recommendations, and what-if changes within their documented evidence boundaries. Treat `PHASE_1_FINAL_SIGNOFF.md` as the inherited ML methodology record, `docs/PHASE_2_FINAL_VERIFICATION.md` as historical explanation evidence, the latest phase verification/signoff reports as phase records, and this handoff plus the independent review as current cross-phase orientation.
+
+---
+
+## 11. Phase 6 addendum — AI Business Analyst (2026-11-16, current session)
+
+*Appended 2026-11-16 by the Phase 6 engineering session. Sections 1–10 above describe the state
+before Phase 6 and were written earlier; the stale uncommitted-work statements in them were
+resolved by checkpoint commit `3d9c795` (see `CRAM_FINAL_INTEGRATION_READINESS.md`). This
+addendum records what changed in Phase 6 and does not modify the historical text.*
+
+### 11.1 What was built
+
+The user authorized **Option A + B** preservation (accept commit `3d9c795` on
+`origin/v2-final-development`; local annotated tag `cram-v2-phase5-complete` at `3d9c795`, not
+pushed) and Phase 6 was implemented in this session:
+
+- `ml/analyst.py` — restricted analytics layer: dataset-aware context builder; 8 approved
+  analytics functions (`portfolio_overview`, `risk_band_breakdown`, `churn_by_dimension`,
+  `high_risk_profile`, `feature_distribution`, `probability_distribution`, `observed_vs_predicted`,
+  `dataset_summary`) that reuse Phase 3 services; deterministic keyword planner (facts-only mode
+  with no API key); Gemini planner/explainer (two LLM calls maximum, model `gemini-2.5-flash`,
+  override via `CRAM_ANALYST_MODEL`); grounding validator that rejects any explanation numeral not
+  derivable from computed facts; injectable HTTP transport with timeout/429/401-403/4xx error
+  mapping; `answer_question` public API returning a structured `AnalystAnswer`.
+- `v2_app.py` — "AI Business Analyst" section between the customer-table CSV download and the
+  retention-actions section: suggested questions, chat history in session state, facts table,
+  caveats, status-specific messaging, disabled Ask on empty input, key from `st.secrets` or env.
+- `tests/test_analyst.py` — 36 tests (analytics correctness, context capabilities, keyword and
+  mocked-LLM planning, cannot-answer behavior, grounding/injection resistance, transport error
+  mapping, credential handling). All LLM traffic mocked; no network or paid API in tests.
+- `tests/test_v2_app.py` — 2 new AppTests (facts-only fallback UI; mocked-LLM answered path).
+- `CRAM_FINAL_INTEGRATION_READINESS.md`, `PHASE_6_FINAL_VERIFICATION.md`,
+  `PHASE_6_FINAL_HANDOFF.md`, `PHASE_6_FINAL_SIGNOFF.md` — audit and phase records.
+- `README.md` — Phase 6 section appended.
+
+### 11.2 Verification record
+
+- Full suite: **79 passed, 0 failed** (41 pre-existing Phase 2–5 tests all green; 36 analyst
+  tests; 2 new AppTests). Warning count 5,233 — same pre-existing joblib/NumPy-2.5 deprecation
+  categories; the increase over 4,906 reflects more model-loading tests, not a new source.
+- Facts-only answer latency ~0.006 s on an 8-row portfolio; context build ~0.006 s.
+- Protected preservation re-verified after implementation: `git diff 06f0fec -- app.py
+  train_model.py model_features.py random_forest_model.joblib model_metadata.json models
+  vercel-app` is **empty** (all 28 protected files match checkpoint
+  `06f0fecc907a5da72d332c4d1761ae836fafa8c2`). No retraining occurred.
+
+### 11.3 Security invariants established in Phase 6
+
+The LLM may only (a) select one whitelisted function with validated arguments or emit
+`cannot_answer`, and (b) narrate computed facts. It cannot execute code or SQL, access the
+filesystem, modify data/thresholds/artifacts, or see credentials. API keys come from
+`GEMINI_API_KEY`/`GOOGLE_API_KEY` (env; app also checks `st.secrets`), travel only in the
+`x-goog-api-key` header, and are never logged or echoed. Zero new dependencies
+(`requests==2.34.2` was already pinned).
+
+### 11.4 Git state after Phase 6 (this session)
+
+Branch `v2-final-development` at `3d9c795` plus uncommitted Phase 6 files listed in 11.1; local
+tag `cram-v2-phase5-complete` at `3d9c795`; `stash@{0}` and `codex/phase2-signed-off-backup`
+intact. The session is authorized to commit locally but **not** to push, merge, or deploy; the
+Gemini integration was not exercised against the live API (tests mock all traffic by design).
+
+### 11.5 Next session orientation
+
+Start from `PHASE_6_FINAL_HANDOFF.md` §11 ("Next Codex — Phase 6 orientation") before editing
+`ml/analyst.py`. Preserve the whitelist registry, argument validation, two-call LLM flow, and
+grounding validator as invariants. Maintenance backlog from §8 (artifact gap, threshold grid
+floor, dependency warnings) still applies and remains unfinished.

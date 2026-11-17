@@ -123,3 +123,68 @@ def test_v2_simulation_scenarios_are_independent_editable_resettable_and_removab
     assert any("Selected customer: C-2" in caption.value for caption in app.caption)
     assert not [widget for widget in app.multiselect if widget.label == "Attributes to vary"]
     assert len(app.exception) == 0
+
+
+# ---------------------------------------------------------------------------
+# Phase 6 — AI Business Analyst
+# ---------------------------------------------------------------------------
+
+
+def test_v2_app_analyst_answers_with_computed_facts_when_no_api_key(monkeypatch):
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    app = AppTest.from_file("v2_app.py").run(timeout=30)
+    app.get("file_uploader")[0].upload("sample_portfolio.csv", _csv_bytes(), "text/csv")
+    app.run(timeout=60)
+
+    assert len(app.exception) == 0
+    assert any("AI Business Analyst" in heading.value for heading in app.subheader)
+    # Asking is disabled until the user types a question.
+    ask = next(button for button in app.button if button.label == "Ask the analyst")
+    assert ask.disabled
+
+    question_box = next(widget for widget in app.text_input if widget.label == "Your question")
+    question_box.set_value("How many customers are in this dataset and how many are predicted to churn?")
+    app.run(timeout=60)
+    ask = next(button for button in app.button if button.label == "Ask the analyst")
+    assert not ask.disabled
+    ask.click().run(timeout=60)
+
+    assert len(app.exception) == 0
+    assert any("Computed results shown directly" in caption.value for caption in app.caption)
+    facts_tables = [frame.value for frame in app.dataframe if "Metric" in frame.value.columns]
+    assert facts_tables and facts_tables[0]["Metric"].str.contains("customers_analyzed").any()
+    assert any("not configured" in caption.value or "GEMINI_API_KEY" in caption.value for caption in app.caption)
+
+
+def test_v2_app_analyst_explains_answered_question_with_mocked_llm(monkeypatch):
+    from ml import analyst
+
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    calls = {"count": 0}
+
+    def fake_call_llm(api_key, system, user, transport=None, timeout=30):
+        calls["count"] += 1
+        if calls["count"] == 1:
+            return '{"function": "portfolio_overview", "arguments": {}}'
+        return "The uploaded dataset contains 4 customers, and the verified counts confirm this number."
+
+    monkeypatch.setattr(analyst, "_call_llm", fake_call_llm)
+    app = AppTest.from_file("v2_app.py").run(timeout=30)
+    app.get("file_uploader")[0].upload("sample_portfolio.csv", _csv_bytes(), "text/csv")
+    app.run(timeout=60)
+
+    question_box = next(widget for widget in app.text_input if widget.label == "Your question")
+    question_box.set_value("How many customers are in this dataset?")
+    app.run(timeout=60)
+    ask = next(button for button in app.button if button.label == "Ask the analyst")
+    ask.click().run(timeout=60)
+
+    assert len(app.exception) == 0
+    assert calls["count"] == 2  # planner + explainer, both mocked
+    assert any("4 customers" in markdown.value for markdown in app.markdown)
+    assert any(
+        "verified against" in caption.value for caption in app.caption
+    )
+    facts_tables = [frame.value for frame in app.dataframe if "Metric" in frame.value.columns]
+    assert facts_tables and facts_tables[0]["Metric"].str.contains("customers_analyzed").any()

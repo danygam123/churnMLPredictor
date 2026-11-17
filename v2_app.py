@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
+from ml import analyst
 from ml.predict import ChurnPredictor
 from ml.preprocessing import (
     CATEGORICAL_INPUTS,
@@ -151,6 +152,136 @@ def _rate_chart(frame: pd.DataFrame, column: Optional[str], title: str) -> None:
     has_observed = "Observed_Churn" in frame and frame["Observed_Churn"].notna().any()
     st.bar_chart(chart.set_index(column)["rate"], y_label="Observed churn rate" if has_observed else "Mean predicted churn probability")
     st.caption("Counts by group: " + ", ".join(f"{row[column]}: {int(row['customers'])}" for _, row in chart.iterrows()))
+
+
+def _format_fact_value(value: Any) -> str:
+    if value is None:
+        return "—"
+    if isinstance(value, float):
+        return f"{value:,.4g}"
+    return str(value)
+
+
+def _flatten_facts(facts: Any, prefix: str = "") -> list:
+    """Flatten computed facts into Metric/Value rows for display."""
+    rows: list = []
+    if isinstance(facts, dict):
+        for key, value in facts.items():
+            label = f"{prefix}{key}"
+            if isinstance(value, dict):
+                rows.extend(_flatten_facts(value, prefix=label + " · "))
+            elif isinstance(value, list):
+                rendered = "; ".join(
+                    json.dumps(item, ensure_ascii=False) if isinstance(item, dict) else _format_fact_value(item)
+                    for item in value
+                )
+                rows.append({"Metric": label, "Value": rendered})
+            else:
+                rows.append({"Metric": label, "Value": _format_fact_value(value)})
+    else:
+        rows.append({"Metric": "Result", "Value": _format_fact_value(facts)})
+    return rows
+
+
+def _render_analyst_answer(entry: dict) -> None:
+    st.markdown(f"**Question:** {entry['question']}")
+    status = entry["status"]
+    if status == "answered" and entry.get("explanation"):
+        st.markdown(entry["explanation"])
+        st.caption(
+            "AI-generated interpretation of computed results; every number in it was verified against the "
+            "calculated facts before display. It is not a causal or business-impact claim."
+        )
+    elif status == "cannot_answer":
+        st.warning(entry.get("note") or "This question cannot be answered from the active dataset.")
+    elif status == "error":
+        st.error(entry.get("note") or "The analyst could not process this question.")
+    elif status == "facts_only":
+        if entry.get("note"):
+            st.info(entry["note"])
+        st.caption(
+            "Computed results shown directly from the approved analytics functions"
+            + (" — the language-model explanation was unavailable or unverified." if entry.get("function") else ".")
+        )
+    facts_rows = entry.get("facts_rows") or []
+    if facts_rows:
+        st.dataframe(pd.DataFrame(facts_rows), hide_index=True, width="stretch")
+    if entry.get("caveats"):
+        st.caption("Caveats: " + "  ".join(entry["caveats"]))
+
+
+def _set_analyst_question(question: str) -> None:
+    st.session_state["cram_analyst_question"] = question
+
+
+def _render_ai_analyst(portfolio, predictor: ChurnPredictor) -> None:
+    st.subheader("AI Business Analyst")
+    st.caption(
+        "Ask questions about the current filtered view. Results are calculated by approved analytics "
+        "functions from the scored portfolio; the configured language model only interprets those "
+        "verified results, and every number it writes is checked against the computed facts before display."
+    )
+    try:
+        analyst_api_key = st.secrets.get("GEMINI_API_KEY") or st.secrets.get("GOOGLE_API_KEY")
+    except Exception:
+        analyst_api_key = None
+    analyst_api_key = analyst_api_key or analyst.get_api_key()
+    if not analyst_api_key:
+        st.caption(
+            "Language-model explanations are not configured (no API key detected), so questions are answered "
+            "with computed results directly. Set the GEMINI_API_KEY environment variable to enable narration."
+        )
+
+    champion = str(predictor.metadata.get("champion_model_name", "unknown"))
+    context = analyst.build_context(portfolio, champion_model_name=champion)
+
+    st.session_state.setdefault("cram_analyst_chat", [])
+    for entry in st.session_state["cram_analyst_chat"]:
+        with st.container(border=True):
+            _render_analyst_answer(entry)
+
+    suggestions = analyst.suggested_questions(context)
+    st.caption("Suggested questions:")
+    suggestion_columns = st.columns(min(4, max(1, len(suggestions))))
+    for index, suggestion in enumerate(suggestions):
+        with suggestion_columns[index % len(suggestion_columns)]:
+            st.button(
+                suggestion,
+                key=f"analyst_suggest_{index}",
+                on_click=_set_analyst_question,
+                args=(suggestion,),
+            )
+
+    question = st.text_input(
+        "Your question",
+        key="cram_analyst_question",
+        max_chars=analyst.MAX_QUESTION_CHARS,
+        placeholder="e.g. Which risk band holds the most customers?",
+    )
+    ask_clicked = st.button("Ask the analyst", key="analyst_ask", disabled=not question.strip())
+    if ask_clicked:
+        with st.spinner("Computing verified results…"):
+            answer = analyst.answer_question(
+                portfolio,
+                question,
+                analyst_api_key,
+                champion_model_name=champion,
+            )
+        entry = {
+            "question": answer.question,
+            "status": answer.status,
+            "function": answer.function,
+            "explanation": answer.explanation,
+            "note": answer.note,
+            "caveats": answer.caveats,
+            "facts_rows": _flatten_facts(answer.facts) if answer.facts is not None else [],
+            "elapsed_seconds": answer.elapsed_seconds,
+        }
+        st.session_state["cram_analyst_chat"].append(entry)
+        with st.container(border=True):
+            _render_analyst_answer(entry)
+        if st.session_state["cram_analyst_chat"]:
+            st.caption(f"Answer computed in {answer.elapsed_seconds:.2f}s.")
 
 
 def _clear_scenario_widgets(customer_widget_key: str, slot: str) -> None:
@@ -532,6 +663,8 @@ st.dataframe(
 )
 download = sorted_view.to_csv(index=False).encode("utf-8")
 st.download_button("Download current filtered results as CSV", data=download, file_name="cram_customer_risk_results.csv", mime="text/csv")
+
+_render_ai_analyst(portfolio, predictor)
 
 st.subheader("Potential retention actions for review")
 st.caption("Transparent rules identify review opportunities for Medium and High Risk customers. These are hypotheses, require human approval, and are not verified churn-prevention outcomes.")

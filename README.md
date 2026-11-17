@@ -101,3 +101,35 @@ causal. A different model probability does not prove that a real business
 action would produce that result. See
 [`PHASE_5_FINAL_HANDOFF.md`](PHASE_5_FINAL_HANDOFF.md) for the editable inputs,
 validation domains, scenario behavior, and limitations.
+
+## Phase 6 — AI Business Analyst
+
+Phase 6 adds a natural-language analytics assistant to the V2 dashboard. Ask
+questions about the currently uploaded, filtered dataset — for example "How
+many customers are predicted to churn?", "What are the most common
+characteristics among high-risk customers?", or "Churn rate by Contract Type" —
+and the assistant answers from actual computed analytics.
+
+The architecture is deliberately restricted: a planner (the Gemini API when a
+key is configured, or a deterministic keyword planner otherwise) selects one of
+eight approved analytics functions with validated arguments; the application
+computes the facts from the scored portfolio; and the language model only
+narrates those verified results. Every numeral in a generated explanation is
+checked against the computed facts before display, and an explanation that
+cites an unsupported number is withheld in favor of the raw results. When
+questions cannot be answered from the available data, the assistant says so
+instead of guessing. Questions unsupported by the dataset — no observed labels,
+a missing column, or a phrasing the planner cannot route — receive honest
+explanations rather than invented statistics.
+
+No API key is required: without `GEMINI_API_KEY`/`GOOGLE_API_KEY` the section
+works in facts-only mode and shows computed results directly. The key is read
+from the environment (or Streamlit secrets), sent only in the request header,
+and never logged or displayed. The assistant cannot execute code or SQL, modify
+uploaded data, or change thresholds and model artifacts. Group comparisons and
+high-risk profiles are descriptive associations in the upload; they do not
+establish causation or intervention effects. See
+[`PHASE_6_FINAL_HANDOFF.md`](PHASE_6_FINAL_HANDOFF.md),
+[`PHASE_6_FINAL_VERIFICATION.md`](PHASE_6_FINAL_VERIFICATION.md), and
+[`PHASE_6_FINAL_SIGNOFF.md`](PHASE_6_FINAL_SIGNOFF.md) for architecture,
+analytics functions, security controls, and the 79-test verification record.
