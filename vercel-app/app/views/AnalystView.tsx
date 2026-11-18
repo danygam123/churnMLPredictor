@@ -1,10 +1,10 @@
 "use client";
 
-// AI Analyst — the Phase 6 restricted analytics layer in the Compass chat
-// language. Python computes every number through the 8 whitelisted functions;
-// the language model (when a key is configured on the server) only picks a
-// function and narrates the computed facts, with grounding validation. Without
-// a key the deterministic planner returns verified facts directly.
+// AI Analyst — restricted analytics. Python computes every number through the
+// 8 whitelisted functions; the language model (when a key is configured on the
+// server) only picks a function and describes the computed facts, with
+// grounding validation. Without a key the deterministic planner returns
+// verified facts directly.
 
 import { useEffect, useRef, useState } from "react";
 import {
@@ -17,9 +17,9 @@ import {
 
 const MAX_CHAT_ENTRIES = 10;
 
-// F-4 provider privacy disclosure (same wording as the reference app).
+// Privacy disclosure: what leaves the app when AI narration is used.
 const PRIVACY_DISCLOSURE =
-  "When language-model narration is configured and used, the analyst request sends: the dataset's column names, dataset metadata and risk thresholds, and the aggregate analytical facts computed from your data. Raw customer rows and customer identifiers are not sent through the explanation path. The request does leave this application and is processed by the configured external AI provider (Google Gemini) under its own data policies.";
+  "Your customer rows and IDs never leave this app. With AI narration on, only the column names, dataset settings, and the summary numbers computed from your data are sent to the external AI provider (Google Gemini) under its own data policies.";
 
 type Entry = { role: "assistant" | "user"; text: string; answer?: AnalystAnswerPayload };
 
@@ -53,7 +53,7 @@ export default function AnalystView({ portfolio, filters }: { portfolio: Portfol
     return <div className="surface panel empty-state">
       <div className="project-icon">✦</div>
       <h2 className="subhead">The analyst needs a dataset</h2>
-      <p className="muted">Load the built-in sample or upload your CSV on the Portfolio page, then ask questions in plain language. Every number the analyst quotes is computed in Python from your scored customers.</p>
+      <p className="muted">Load the built-in sample or upload your CSV on the Portfolio page, then ask anything. Every number comes from real calculations on your customers — the AI only describes them.</p>
     </div>;
   }
 
@@ -90,7 +90,7 @@ export default function AnalystView({ portfolio, filters }: { portfolio: Portfol
         <span className="chat-tag">{providerConfigured === null ? "CHECKING PROVIDER…" : providerConfigured ? "AI NARRATION ON" : "FACTS-ONLY MODE"}</span>
       </div>
       <div className="messages" aria-live="polite">
-        {!entries.length && <div className="message"><div className="message-avatar">✦</div><div className="message-body"><span className="message-by">Analyst</span>Ask a question about your customers and I’ll compute the answer from the approved analytics functions — overview, risk bands, group comparisons, distributions, and more. Try one of the suggestions below.</div></div>}
+        {!entries.length && <div className="message"><div className="message-avatar">✦</div><div className="message-body"><span className="message-by">Analyst</span>Ask anything about your customers — I’ll compute the answer from real calculations. Try one of the suggestions below.</div></div>}
         {entries.map((entry, index) => entry.role === "user"
           ? <div className="message user" key={index}><div className="message-avatar">🙂</div><div className="message-body">{entry.text}</div></div>
           : <AssistantEntry key={index} entry={entry} />)}
@@ -104,7 +104,7 @@ export default function AnalystView({ portfolio, filters }: { portfolio: Portfol
         <button className="send-button" type="submit" disabled={!composer.trim() || stage !== "idle"} aria-label="Send question">↑</button>
       </form>
       <div className="chat-under">
-        <span>Python computes every number; narration only describes verified facts.</span>
+        <span>Python computes every number; the AI only describes the results.</span>
         <button className="text-button" onClick={() => { setEntries([]); setComposer(""); }}>Clear chat</button>
       </div>
     </section>
@@ -112,10 +112,10 @@ export default function AnalystView({ portfolio, filters }: { portfolio: Portfol
       <div className="snapshot-head"><div><div className="section-heading">How this works</div><div className="snapshot-sub">Restricted by design</div></div><span className="snapshot-mark">✓</span></div>
       <div className="profile-list" style={{ marginTop: 12 }}>
         {[
-          ["Approved functions only", "8 analytics functions; no arbitrary code, SQL, or file access"],
-          ["Computed in Python", "Statistics come from your scored dataset, never from the language model"],
-          ["Grounded narration", "AI text is validated against the computed facts; ungrounded text is withheld"],
-          ["Facts-only fallback", "Without a configured key, verified facts are still returned"],
+          ["Only approved calculations", "8 fixed analytics functions; no arbitrary code or file access"],
+          ["Computed in Python", "Numbers come from your dataset, never invented by the AI"],
+          ["Grounded narration", "AI text is checked against the computed numbers; mismatches are withheld"],
+          ["Facts-only fallback", "Without an AI key, verified numbers are still returned"],
           ["Bounded history", `The last ${MAX_CHAT_ENTRIES} exchanges are kept; Clear chat removes them`],
         ].map(([label, note]) => <div className="profile-item" key={label}><div className="profile-label">{label}</div><div className="profile-value" style={{ fontWeight: 400, fontSize: 11, color: "#c3d2d6" }}>{note}</div></div>)}
       </div>

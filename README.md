@@ -1,7 +1,8 @@
-# Churn ML Predictor — C.R.A.M. V2 / Churn Compass
+# C.R.A.M. — Customer Retention and Analytics Model
 
 Telecom customer churn research application. The production experience is
-**Churn Compass**, a Next.js interface served by the C.R.A.M. V2 Python engine
+**C.R.A.M. (Customer Retention and Analytics Model)**, a Next.js interface served by the
+C.R.A.M. V2 Python engine
 as Vercel serverless functions (`https://churn-ml-predictor.vercel.app/`). The
 Streamlit interfaces (V1 `app.py` and the Phase 3–7 V2 dashboard) were retired
 after the Vercel application reached full feature parity; they remain

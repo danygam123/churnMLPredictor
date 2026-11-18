@@ -429,7 +429,7 @@ Streamlit state; this section records its retirement into the deployed Vercel ap
 ### 13.1 What was built
 
 The complete C.R.A.M. V2 functionality (Phases 2–7) now runs in the existing production
-Vercel project ("Churn Compass", Root Directory `vercel-app`), preserving its identity
+Vercel project ("C.R.A.M.", Root Directory `vercel-app`), preserving its identity
 (teal accent, deep navy surfaces, Manrope/DM Sans, sidebar + breadcrumb patterns, guided
 interview, customer snapshot, research-preview positioning). New semantic green/amber/red
 tokens were added only for the risk-band system.

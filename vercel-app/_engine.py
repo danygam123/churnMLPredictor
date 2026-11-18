@@ -1,4 +1,4 @@
-"""Shared V2 engine wiring for the Churn Compass serverless endpoints.
+"""Shared V2 engine wiring for the C.R.A.M. serverless endpoints.
 
 Every V2 endpoint is deliberately stateless: a request carries either raw CSV
 text or the already-scored rows of the client's current (optionally filtered)

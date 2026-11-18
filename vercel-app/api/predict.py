@@ -92,9 +92,9 @@ class handler(BaseHTTPRequestHandler):
                 ({"name": name, "value": importance[name]} for name in INPUT_FEATURES),
                 key=lambda item: item["value"], reverse=True,
             )
-            self._send(200, {"status": "ready", "model": "Churn Compass", "importance": ranked})
+            self._send(200, {"status": "ready", "model": "C.R.A.M.", "importance": ranked})
             return
-        self._send(200, {"status": "ready", "model": "Churn Compass"})
+        self._send(200, {"status": "ready", "model": "C.R.A.M."})
 
     def do_POST(self) -> None:
         try:

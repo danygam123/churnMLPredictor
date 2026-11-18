@@ -100,7 +100,7 @@ export default function CustomersView({
           </div>
         </div>
         <div className="field">
-          <label>Usage-charge proxy ($)</label>
+          <label>Est. usage charge ($)</label>
           <div className="range-inputs">
             <input aria-label="Minimum usage charge" type="number" placeholder="min" value={filters.charge[0] ?? ""} onChange={(event) => onFilters({ ...filters, charge: [event.target.value === "" ? null : Number(event.target.value), filters.charge[1]] })} />
             <input aria-label="Maximum usage charge" type="number" placeholder="max" value={filters.charge[1] ?? ""} onChange={(event) => onFilters({ ...filters, charge: [filters.charge[0], event.target.value === "" ? null : Number(event.target.value)] })} />
@@ -125,7 +125,7 @@ export default function CustomersView({
           <th>Risk band</th>
           <th>Support calls</th>
           <th>Day minutes</th>
-          <th>Estimated inputs</th>
+          <th>Est. inputs</th>
           <th></th>
         </tr></thead>
         <tbody>
@@ -133,7 +133,7 @@ export default function CustomersView({
         </tbody>
       </table>
     </div>
-    {filtered.length > 60 && <p className="section-copy">Showing the first 60 customers of {filtered.length.toLocaleString()}. Exports include every filtered customer.</p>}
+    {filtered.length > 60 && <p className="section-copy">Showing the first 60 of {filtered.length.toLocaleString()} filtered customers. Exports include all of them.</p>}
 
     {detail && <CustomerDetail detail={detail} onClose={() => setDetail(null)} onUseAsBaseline={() => { onUseAsBaseline(detail.row); setDetail(null); }} />}
   </div>;
@@ -179,7 +179,7 @@ function CustomerDetail({ detail, onClose, onUseAsBaseline }: { detail: Detail; 
         <h2 className="subhead">Customer {id}</h2>
         <div className="action-row" style={{ marginTop: 6 }}>
           <span className={`risk-pill ${BAND_CLASS[band] ?? ""}`} style={{ background: `${BAND_COLORS[band]}1f`, color: BAND_COLORS[band] }}>{band}</span>
-          <span className="section-copy">{(probability * 100).toFixed(1)}% · {String(row.Prediction)} · {String(row.Estimated_Input_Count)} estimated input(s)</span>
+          <span className="section-copy">{(probability * 100).toFixed(1)}% · {String(row.Prediction)} · {String(row.Estimated_Input_Count)} estimated detail(s)</span>
         </div>
       </div>
       <div className="action-row" style={{ marginTop: 0 }}>
@@ -201,7 +201,7 @@ function CustomerDetail({ detail, onClose, onUseAsBaseline }: { detail: Detail; 
         {error && <div className="error">{error}</div>}
         {explanation && <ShapSection explanation={explanation} />}
         {recommendations.length > 0 && <div style={{ marginTop: 14 }}>
-          <div className="form-section">Rule-based review suggestions</div>
+          <div className="form-section">Review suggestions</div>
           {recommendations.map((item) => <div className="note-card" key={item.rule_id} style={{ marginBottom: 8 }}>
             <strong>{item.title}</strong> <span className="section-copy">· priority {item.priority}</span>
             <p className="section-copy">{item.action}</p>
@@ -209,7 +209,7 @@ function CustomerDetail({ detail, onClose, onUseAsBaseline }: { detail: Detail; 
             <p className="section-copy" style={{ fontSize: 10 }}>Limitations: {item.limitations}</p>
           </div>)}
         </div>}
-        {!busy && !recommendations.length && !error && <p className="section-copy" style={{ marginTop: 14 }}>No rule-based suggestions for this customer at the current thresholds.</p>}
+        {!busy && !recommendations.length && !error && <p className="section-copy" style={{ marginTop: 14 }}>No suggestions for this customer at the current settings.</p>}
       </div>
     </div>
   </section>;
@@ -217,7 +217,7 @@ function CustomerDetail({ detail, onClose, onUseAsBaseline }: { detail: Detail; 
 
 export function ShapSection({ explanation }: { explanation: ShapExplanation }) {
   return <div style={{ marginTop: 14 }}>
-    <div className="form-section">What pushed this score (SHAP)</div>
+    <div className="form-section">What pushed this score</div>
     <p className="section-copy" style={{ marginBottom: 10 }}>{explanation.summary}</p>
     <div className="signal-list" style={{ marginTop: 4 }}>
       {explanation.all_contributions.map((item) => <div className="signal-row" key={item.feature}>
@@ -229,11 +229,11 @@ export function ShapSection({ explanation }: { explanation: ShapExplanation }) {
       </div>)}
     </div>
     <div className="score-caption" style={{ marginTop: 10 }}>
-      Signed contributions in probability points relative to the fixed V2 reference population (base {(explanation.base_value * 100).toFixed(1)}%).
-      ◌ marks inputs that were missing or invalid and used typical values. These are model associations, not causes.
+      How much each detail pushed the score up or down, in points (starting point {(explanation.base_value * 100).toFixed(1)}%).
+      ◌ = a missing detail that used a typical value. Patterns from the data, not causes.
     </div>
     <div className="score-caption" style={{ marginTop: 6 }}>
-      Binary decision applied at {(explanation.decision_threshold_used * 100).toFixed(0)}%: {explanation.prediction}. Risk band: {explanation.risk_category}.
+      Decision at {(explanation.decision_threshold_used * 100).toFixed(0)}%: {explanation.prediction}. Risk band: {explanation.risk_category}.
     </div>
   </div>;
 }

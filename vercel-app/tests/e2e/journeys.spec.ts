@@ -1,4 +1,4 @@
-﻿// Playwright E2E — the 13 production-release journeys for Churn Compass.
+﻿// Playwright E2E — the 13 production-release journeys for C.R.A.M.
 // The browser talks to the real built Next.js app with /api/* proxied to the
 // real Python endpoint handlers, so these journeys exercise the actual
 // production code paths (client shell + serverless engine).
@@ -87,8 +87,8 @@ test("04 SHAP explanation loads from the engine", async ({ page }) => {
   await page.getByRole("button", { name: /Quick form/ }).click();
   await page.getByRole("button", { name: "Estimate customer risk" }).click();
   await expect(page.locator(".score-card")).toBeVisible({ timeout: 30_000 });
-  await page.getByRole("button", { name: /Compute the model explanation \(SHAP\)/ }).click();
-  await expect(page.getByText(/Signed SHAP contributions/i)).toBeVisible({ timeout: 60_000 });
+  await page.getByRole("button", { name: /Why this score\? Show the breakdown/ }).click();
+  await expect(page.getByText(/How much each detail pushed the score up or down/i)).toBeVisible({ timeout: 60_000 });
 });
 
 // ---------------------------------------------------------------------------
@@ -160,7 +160,7 @@ test("09 retention view shows rule groups for the sample data", async ({ page })
   await nav(page, "Retention Strategies").click();
   await expect(page.getByText(/review suggestions/i).first()).toBeVisible({ timeout: 60_000 });
   await expect(page.locator(".retention-layout").getByText(/rule match/i)).toBeVisible();
-  await expect(page.locator(".retention-layout").getByText(/not proven interventions/i)).toBeVisible();
+  await expect(page.locator(".retention-layout").getByText(/not proven fixes/i)).toBeVisible();
 });
 
 // ---------------------------------------------------------------------------
@@ -188,7 +188,7 @@ test("11 AI analyst returns grounded computed facts", async ({ page }) => {
   await expect(page.locator(".message").last()).toContainText(/ANSWERED · GROUNDED|COMPUTED FACTS/, { timeout: 60_000 });
   await expect(page.getByText("Computed fact").first()).toBeVisible();
   await expect(page.locator(".snapshot")).toContainText("Restricted by design");
-  await expect(page.locator(".snapshot")).toContainText(/Raw customer rows and customer identifiers are not sent/);
+  await expect(page.locator(".snapshot")).toContainText(/never leave this app/);
 });
 
 // ---------------------------------------------------------------------------
@@ -198,11 +198,11 @@ test("11 AI analyst returns grounded computed facts", async ({ page }) => {
 test("12 model performance shows the V2 evaluation record", async ({ page }) => {
   await page.goto("/");
   await nav(page, "Model performance").click();
-  await expect(page.getByText("V2 engine · champion model evaluation")).toBeVisible();
-  await expect(page.getByText("Default 50% cutoff (production)")).toBeVisible();
-  await expect(page.getByText("Phase 1 cost-optimal (evaluated)")).toBeVisible();
+  await expect(page.getByText("Upgraded model (V2) — test results")).toBeVisible();
+  await expect(page.getByText("50% cutoff (in use)")).toBeVisible();
+  await expect(page.getByText("Lower cutoff (comparison)")).toBeVisible();
   await expect(page.getByText("Probability calibration")).toBeVisible();
-  await expect(page.getByText(/Training-sample global SHAP results/i)).toBeVisible();
+  await expect(page.getByText(/What the model learned overall/i)).toBeVisible();
   await expect(page.locator(".page-title")).toContainText(/How the model performs/);
 });
 

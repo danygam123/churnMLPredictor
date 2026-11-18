@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 import path from "path";
 
-// E2E for the Churn Compass production app.
+// E2E for the C.R.A.M. production app.
 // Three servers are orchestrated:
 //   1. the Python endpoint servers (the real Vercel handler code),
 //   2. the built Next.js app,

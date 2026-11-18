@@ -1,8 +1,8 @@
 "use client";
 
-// Simulation Lab — Phase 5 A/B/C scenario behavior through the V2 engine.
-// Every scenario is evaluated on a fresh copy of the baseline; editing one
-// scenario never mutates the baseline or another scenario.
+// Simulation Lab — what-if scenarios through the V2 engine. Every scenario is
+// evaluated on a fresh copy of the baseline; editing one scenario never
+// mutates the baseline or another scenario.
 
 import { useMemo, useState } from "react";
 import { FIELDS, LABELS, Profile } from "@/lib/chat";
@@ -46,12 +46,11 @@ export default function SimulationView({
       <div className="project-icon">⇄</div>
       <h2 className="subhead">Pick a baseline customer</h2>
       <p className="muted">
-        Simulations compare a starting profile with up to three hypothetical variants. Choose a
-        customer from your dataset below, or score one first on the Predict page and it will
-        appear here automatically.
+        Simulations compare a starting customer with up to three hypothetical versions. Pick a
+        customer below, or score one first on the Predict page and it will appear here automatically.
       </p>
       {portfolio ? <div className="field" style={{ maxWidth: 420, marginTop: 14 }}>
-        <label htmlFor="sim-customer">Baseline from the customer database</label>
+        <label htmlFor="sim-customer">Pick a customer</label>
         <select id="sim-customer" onChange={(event) => {
           const row = portfolio.rows.find((item) => String(item["Customer ID"]) === event.target.value);
           if (row) onBaseline({ profile: Object.fromEntries(FIELDS.map((field) => [field, row[field] ?? null])) as Profile, source: `Customer ${row["Customer ID"]}` });
@@ -61,7 +60,7 @@ export default function SimulationView({
             {String(row["Customer ID"])} · {(Number(row.Churn_Probability) * 100).toFixed(1)}% · {String(row.Risk_Category).replace(" Risk", "")}
           </option>)}
         </select>
-        <small>Suggestions are the highest-risk customers; search for any ID in the Customers page.</small>
+        <small>Suggestions are the highest-risk customers; search for any ID on the Customers page.</small>
       </div> : <p className="section-copy" style={{ marginTop: 12 }}>Load a dataset on the Portfolio page to pick a customer, or enter one on the Predict page.</p>}
     </div>;
   }
@@ -88,7 +87,7 @@ export default function SimulationView({
       <div className="results-head">
         <div>
           <h2 className="subhead">Baseline · {baseline.source}</h2>
-          <p className="section-copy">Only the 13 model inputs can change. Identifiers, labels, and derived charge fields are not editable.</p>
+          <p className="section-copy">Only the 13 model details can change here. IDs, labels, and derived charges stay as they are.</p>
         </div>
         <button className="text-button" onClick={() => { onBaseline(null); setScenarios([blankScenario("Scenario A")]); setResults(null); }}>Change baseline</button>
       </div>
@@ -111,7 +110,7 @@ export default function SimulationView({
 
     {results && <section className="surface panel">
       <h2 className="subhead">Baseline versus scenarios</h2>
-      <p className="section-copy">Binary decision at 50%; risk bands use the session thresholds. Scenarios are hypothetical model inputs — the model cannot confirm that a change would cause an outcome.</p>
+      <p className="section-copy">Decision at the 50% cutoff; risk bands use your settings. Scenarios are what-ifs — the model can’t say that a change would cause an outcome.</p>
       <div className="table-wrap" style={{ marginTop: 12 }}>
         <table className="data-table">
           <thead><tr>

@@ -3,7 +3,7 @@
 Playwright's proxy (tests/e2e/proxy.mjs) forwards /api/* to these ports, so the
 browser tests exercise the real serverless handler code end-to-end.
 
-Ports: score 8600, explain 8601, analyze 8602, recommend 8603, simulate 8604, analyst 8605.
+Ports: score 8600, explain 8601, analyze 8602, recommend 8603, simulate 8604, analyst 8605, predict 8606.
 """
 import sys
 import threading
@@ -11,7 +11,7 @@ from http.server import ThreadingHTTPServer
 
 sys.path.insert(0, "api")
 sys.path.insert(0, ".")
-import score, explain, analyze, recommend, simulate, analyst  # noqa: E402
+import score, explain, analyze, recommend, simulate, analyst, predict  # noqa: E402
 
 ENDPOINTS = {
     "/api/score": (8600, score.handler),
@@ -20,6 +20,7 @@ ENDPOINTS = {
     "/api/recommend": (8603, recommend.handler),
     "/api/simulate": (8604, simulate.handler),
     "/api/analyst": (8605, analyst.handler),
+    "/api/predict": (8606, predict.handler),
 }
 
 servers = []

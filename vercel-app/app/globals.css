@@ -30,3 +30,35 @@
 @media(max-width:1050px){.filter-bar{grid-template-columns:repeat(2,minmax(0,1fr))}.detail-grid{grid-template-columns:1fr}.rec-grid,.scenario-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.settings-grid{grid-template-columns:1fr}}
 @media(max-width:780px){.customers-layout,.portfolio-layout,.retention-layout,.simulation-layout{gap:12px}.filter-bar{grid-template-columns:1fr}.rec-grid,.scenario-grid{grid-template-columns:1fr}.dataset-banner{flex-direction:column;align-items:flex-start}.metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:480px){.bar-item{grid-template-columns:minmax(84px,120px) 1fr 45px}}
+/* ---- Product polish sprint (2026-11-17): motion, hover, and micro-interactions ---- */
+html{scroll-behavior:smooth}
+.brand-sub{font-size:9px;letter-spacing:.03em;text-transform:none;line-height:1.4}
+.view-body{animation:viewIn .32s cubic-bezier(.2,.8,.25,1)}
+@keyframes viewIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.score-card{animation:scoreIn .45s cubic-bezier(.2,.8,.25,1)}
+@keyframes scoreIn{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+.score-track span{transform-origin:left;animation:growX .9s cubic-bezier(.2,.8,.25,1)}
+.bar-track span,.signal-track span{transform-origin:left;animation:growX .7s cubic-bezier(.2,.8,.25,1)}
+@keyframes growX{from{transform:scaleX(0)}}
+.metric-card{transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+.metric-card:hover{transform:translateY(-2px);border-color:#59ddc24d;box-shadow:0 12px 30px rgba(0,0,0,.28)}
+.rec-card,.unknown-card,.scenario-card,.profile-item{transition:border-color .18s ease,background .18s ease}
+.rec-card:hover,.unknown-card:hover,.scenario-card:hover{border-color:#59ddc23a}
+.profile-item:hover{background:#101c27}
+.data-table tbody tr{transition:background .15s ease}
+.data-table tbody tr:hover{background:#ffffff07}
+.outline-button{transition:border-color .18s ease,color .18s ease,transform .12s ease,box-shadow .18s ease}
+.outline-button:hover{box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.primary-button,.send-button{transition:filter .18s ease,transform .15s ease,box-shadow .18s ease}
+.primary-button:active,.outline-button:active,.send-button:active{transform:translateY(0) scale(.98)}
+.quick-chip,.chip{transition:border-color .15s ease,color .15s ease,background .15s ease,transform .12s ease}
+.quick-chip:active,.chip:active{transform:scale(.97)}
+.loading{animation:breathe 1.5s ease-in-out infinite}
+@keyframes breathe{50%{opacity:.55}}
+.online{animation:glow 2.6s ease-in-out infinite}
+@keyframes glow{50%{box-shadow:0 0 0 4px #59ddc21a}}
+.sidebar .brand-icon{transition:transform .35s cubic-bezier(.2,.8,.25,1)}
+.sidebar .brand-icon:hover{transform:rotate(-8deg) scale(1.06)}
+.helper summary,.snapshot-mark,.side-dot{user-select:none}
+.snapshot{transition:box-shadow .2s ease}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation-duration:.001s!important;transition-duration:.001s!important}}

@@ -1,9 +1,9 @@
 "use client";
 
-// Portfolio overview — the Phase 7 Overview experience in Churn Compass idiom.
-// Metrics are computed from the active scored dataset (never hardcoded), and
-// uploads are validated with the Phase 3 validator + Phase 7 precheck before a
-// working dataset can be replaced.
+// Portfolio overview — load or upload a customer list and see risk, patterns,
+// and predictions. Metrics are computed from the active scored dataset (never
+// hardcoded), and uploads are validated with the Phase 3 validator + Phase 7
+// precheck before a working dataset can be replaced.
 
 import { ChangeEvent, useRef } from "react";
 import { LABELS } from "@/lib/chat";
@@ -18,7 +18,7 @@ import {
 } from "@/lib/portfolio";
 
 const SAMPLE_NOTE =
-  "The built-in sample is an 80-customer, de-identified extract from the public telecom benchmark (synthetic IDs C-00xx). It exists for demonstration only and passes the same validation pipeline as any upload.";
+  "The sample is 80 example customers from the public telecom dataset. It’s for demonstration only and passes the same checks as any upload.";
 
 export default function PortfolioView({
   portfolio,
@@ -51,9 +51,8 @@ export default function PortfolioView({
         <div className="project-icon">◈</div>
         <h2 className="subhead">Load a customer portfolio</h2>
         <p className="muted">
-          Upload a CSV of telecom customers to explore portfolio risk, patterns, and predictions.
-          Blank cells are filled with typical values and disclosed. Your file is processed for
-          this session only and is not stored.
+          Upload a customer list (CSV) or try the built-in sample. Missing details get filled
+          with typical values and marked. Nothing is stored.
         </p>
         <div className="upload-box">
           <div style={{ fontSize: 22, marginBottom: 8, color: "var(--teal)" }}>⇧</div>
@@ -73,10 +72,10 @@ export default function PortfolioView({
         <h2 className="subhead">What you’ll get</h2>
         <div className="profile-list">
           {[
-            ["Headline metrics", "Customers analyzed, predicted churners, average probability, high-risk count"],
+            ["Headline metrics", "Customers scored, predicted churners, and the average score"],
             ["Observed churn rate", "When your file includes a Churn column with true/false labels"],
-            ["Risk-band distribution", "Low, Medium, and High segments with adjustable thresholds"],
-            ["Customer patterns", "Plan and support-call patterns across the portfolio"],
+            ["Risk-band distribution", "Low, Medium, and High groups — adjustable in Project info"],
+            ["Customer patterns", "Churn rate by plan and support-call count"],
             ["Analytics export", "A CSV summary of everything on this page"],
           ].map(([label, note]) => <div className="profile-item" key={label}><div className="profile-label">{label}</div><div className="profile-value" style={{ fontWeight: 400, fontSize: 11, color: "#c3d2d6" }}>{note}</div></div>)}
         </div>
@@ -87,9 +86,9 @@ export default function PortfolioView({
   const summary = portfolio.summary;
   const metrics: [string, string, string][] = [
     ["Customers analyzed", summary.customers_analyzed.toLocaleString(), "From the active dataset"],
-    ["Predicted churners", summary.predicted_churners.toLocaleString(), "Model probability ≥ 50% cutoff"],
-    ["Average probability", `${(summary.average_predicted_probability * 100).toFixed(1)}%`, "Mean predicted churn probability"],
-    ["High-risk customers", summary.high_risk_customers.toLocaleString(), "High-risk band (session thresholds)"],
+    ["Predicted churners", summary.predicted_churners.toLocaleString(), "Score at or above the 50% cutoff"],
+    ["Average score", `${(summary.average_predicted_probability * 100).toFixed(1)}%`, "Mean predicted churn probability"],
+    ["High-risk customers", summary.high_risk_customers.toLocaleString(), "In the High-risk band"],
     ["Observed churn rate", summary.observed_churn_rate === null ? "—" : `${(summary.observed_churn_rate * 100).toFixed(1)}%`, summary.observed_churn_rate === null ? "No valid Churn labels in this file" : `From ${summary.observed_label_count} labeled customer(s)`],
   ];
   const total = Math.max(1, summary.customers_analyzed);
@@ -98,7 +97,7 @@ export default function PortfolioView({
     <div className="dataset-banner">
       <div>
         <strong>{portfolio.isSample ? "Sample data" : "Your upload"} · {portfolio.name}</strong>
-        <span className="section-copy">{summary.customers_analyzed.toLocaleString()} customers scored with the V2 engine · binary decision at the 50% cutoff</span>
+        <span className="section-copy">{summary.customers_analyzed.toLocaleString()} customers scored · decision at the 50% cutoff</span>
       </div>
       <div className="action-row" style={{ marginTop: 0 }}>
         <button className="text-button" onClick={onNavigate.bind(null, "Customers")}>Browse customers →</button>
@@ -112,7 +111,7 @@ export default function PortfolioView({
 
     <section className="surface panel">
       <h2 className="subhead">Risk-band distribution</h2>
-      <p className="section-copy">Descriptive segments of model probability, separate from the 50% binary decision. Adjust bands in Project info.</p>
+      <p className="section-copy">How customers split across the risk levels. Adjust the split in Project info.</p>
       <div className="bar-chart">
         {ALL_BANDS.map((band) => <div className="bar-item" key={band}>
           <span>{band}</span>
@@ -125,8 +124,8 @@ export default function PortfolioView({
     <section className="surface panel">
       <h2 className="subhead">Customer patterns</h2>
       <p className="section-copy">
-        Observed churn rate by group when labels are present; otherwise the mean predicted probability.
-        These are associations within this dataset, not causes.
+        Churn rate by group when labels are present; otherwise the average predicted score.
+        These are patterns in your data, not causes.
       </p>
       {Object.entries(portfolio.groupRates).length ? Object.entries(portfolio.groupRates).map(([column, rates]) =>
         <GroupChart key={column} column={column} rates={rates} />) : <p className="muted">No groupable columns are available in this dataset.</p>}
@@ -136,7 +135,7 @@ export default function PortfolioView({
       <div className="results-head">
         <div>
           <h2 className="subhead">Validation notes</h2>
-          <p className="section-copy">How the validator handled this dataset. Unknown or invalid values are imputed with typical values and disclosed per customer.</p>
+          <p className="section-copy">Missing or invalid values were filled with typical values and marked per customer.</p>
         </div>
         <button className="outline-button" onClick={onExportSummary} disabled={exportBusy}>{exportBusy ? "Preparing…" : "↓ Export analytics summary"}</button>
       </div>
@@ -145,8 +144,7 @@ export default function PortfolioView({
         {portfolio.notes.map((note) => <li key={note}>{note}</li>)}
       </ul> : <p className="success-line" style={{ marginTop: 10 }}>Every provided value was accepted by validation.</p>}
       <p className="section-copy" style={{ marginTop: 12 }}>
-        “Derived Usage Charge Total” is the model’s usage-charge estimate (minutes × research rates);
-        it is not an account monthly bill.
+        “Derived Usage Charge Total” is minutes × research rates — not a monthly bill.
       </p>
     </section>
   </div>;

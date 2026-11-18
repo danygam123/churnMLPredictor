@@ -61,7 +61,7 @@ const QUESTIONS: Record<string, string> = {
   "Total intl calls": "About how many international calls do they make in a month?",
   "Customer service calls": "How many times have they called customer support?",
 };
-const INITIAL: Message[] = [{ role: "assistant", text: "Hi, I’m Compass. Tell me about the customer in everyday language. Share a few details at once, skip what you don’t know, and I’ll help fill in the picture." }];
+const INITIAL: Message[] = [{ role: "assistant", text: "Hi, I’m C.R.A.M. Tell me about your customer in everyday language. Skip what you don’t know — I’ll fill it in." }];
 const QUICK_STARTS = [
   { icon: "☎", label: "Phone use", text: "They use about 120 minutes during the day and 80 minutes in the evening." },
   { icon: "✳", label: "Plans & tenure", text: "They have been with the provider for about 2 years, no international plan, and voicemail yes." },
@@ -94,7 +94,7 @@ async function scoreProfile(profile: Profile, thresholds: Thresholds): Promise<P
 }
 
 function PageHeader({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
-  return <div className="page-head"><div><p className="eyebrow">{eyebrow}</p><h1 className="page-title">{title}</h1><p className="page-description">{description}</p></div><span className="preview"><span className="online" /> RESEARCH PREVIEW</span></div>;
+  return <div className="page-head"><div><p className="eyebrow">{eyebrow}</p><h1 className="page-title">{title}</h1><p className="page-description">{description}</p></div><span className="preview" title="Research tool: explore the model, don’t act on it alone."><span className="online" /> RESEARCH PREVIEW</span></div>;
 }
 
 // ---------------------------------------------------------------------------
@@ -118,20 +118,20 @@ function ScoreCard({ result, profile, thresholds }: { result: Prediction; profil
   };
 
   return <div className="score-card">
-    <div className="score-top"><div><div className="score-label">ESTIMATED CHURN SCORE</div><div className="score-number">{(result.score * 100).toFixed(1)}%</div></div>
+    <div className="score-top"><div><div className="score-label" title="The model’s estimate of how likely this customer is to leave.">ESTIMATED CHURN SCORE</div><div className="score-number">{(result.score * 100).toFixed(1)}%</div></div>
       <span style={{ display: "flex", gap: 6 }}>
         <span className="risk-pill low">{result.label}</span>
-        <span className={`risk-pill ${BAND_CLASS[result.riskBand] ?? ""}`} style={{ background: `${BAND_COLORS[result.riskBand]}1f`, color: BAND_COLORS[result.riskBand] }}>{result.riskBand.replace(" Risk", "")} risk</span>
+        <span className={`risk-pill ${BAND_CLASS[result.riskBand] ?? ""}`} style={{ background: `${BAND_COLORS[result.riskBand]}1f`, color: BAND_COLORS[result.riskBand] }} title="The risk band is a separate grouping of the score, adjustable in Project info.">{result.riskBand.replace(" Risk", "")} risk</span>
       </span></div>
     <div className="score-track"><span style={{ width: `${Math.max(1, result.score * 100)}%` }} /></div>
-    <div className="score-caption">This is a model estimate, not a guarantee. {result.estimatedFields.length ? `${result.estimatedFields.length} detail(s) used typical values.` : "No details needed estimating."} The “Likely / less likely” label applies the 50% research cutoff; the colored band is a separate V2 classification.</div>
-    {result.estimatedFields.length > 0 && <div className="alert">Estimated details: {result.estimatedFields.map((field) => LABELS[field]).join(", ")}. Predictions with more unknown details are less dependable.</div>}
+    <div className="score-caption">An estimate, not a guarantee. {result.estimatedFields.length ? `${result.estimatedFields.length} detail(s) used typical values.` : "All details provided."} The label applies the 50% cutoff; the colored band is a separate risk level.</div>
+    {result.estimatedFields.length > 0 && <div className="alert">Estimated details: {result.estimatedFields.map((field) => LABELS[field]).join(", ")}. More unknown details means a less dependable estimate.</div>}
     {result.signals?.length ? <>
-      <button className="text-button" onClick={() => setOpen(!open)}>{open ? "Hide" : "Explore"} which details shifted this score</button>
-      {open && <div className="signal-list">{result.signals.map((signal) => <div className="signal-row" key={signal.name}><span>{LABELS[signal.name]}</span><div className="signal-track"><span style={{ width: `${Math.max(5, Math.min(100, Math.abs(signal.change) * 500))}%` }} /></div><span>{signal.change > 0 ? "+" : ""}{(signal.change * 100).toFixed(1)} pt</span></div>)}<div className="score-caption">Comparison with the model’s typical value for one detail at a time. These are model patterns, not causes of churn.</div></div>}
+      <button className="text-button" onClick={() => setOpen(!open)}>{open ? "Hide" : "Show"} what moved this score</button>
+      {open && <div className="signal-list">{result.signals.map((signal) => <div className="signal-row" key={signal.name}><span>{LABELS[signal.name]}</span><div className="signal-track"><span style={{ width: `${Math.max(5, Math.min(100, Math.abs(signal.change) * 500))}%` }} /></div><span>{signal.change > 0 ? "+" : ""}{(signal.change * 100).toFixed(1)} pt</span></div>)}<div className="score-caption">Each detail compared one at a time against a typical customer. Patterns, not causes.</div></div>}
     </> : null}
-    <button className="text-button" onClick={() => void loadShap()}>{shap ? (open ? "Hide the model explanation (SHAP)" : "Show the model explanation (SHAP)") : "Why this score? Compute the model explanation (SHAP)"}</button>
-    {open && (shapBusy ? <div className="loading" style={{ marginTop: 10 }}>Computing the SHAP explanation…</div>
+    <button className="text-button" onClick={() => void loadShap()}>{shap ? (open ? "Hide breakdown" : "Show breakdown") : "Why this score? Show the breakdown"}</button>
+    {open && (shapBusy ? <div className="loading" style={{ marginTop: 10 }}>Calculating…</div>
       : shapError ? <div className="error">{shapError}</div>
       : shap ? <div className="signal-list">
         <div className="score-caption" style={{ marginBottom: 4 }}>{shap.summary}</div>
@@ -140,7 +140,7 @@ function ScoreCard({ result, profile, thresholds }: { result: Prediction; profil
           <div className="signal-track"><span style={{ width: `${Math.max(2, Math.min(100, item.magnitude * 800))}%`, background: item.contribution > 0 ? "var(--red)" : item.contribution < 0 ? "var(--teal)" : "#5a6b74" }} /></div>
           <span>{item.contribution > 0 ? "+" : ""}{(item.contribution * 100).toFixed(1)} pt</span>
         </div>)}
-        <div className="score-caption">Signed SHAP contributions in probability points relative to the fixed V2 reference population (base {(shap.base_value * 100).toFixed(1)}%). ◌ marks inputs that were missing or invalid and used typical values. These are model associations, not causes.</div>
+        <div className="score-caption">How much each detail pushed the score up or down, in points (starting point {(shap.base_value * 100).toFixed(1)}%). ◌ = a missing detail that used a typical value. Patterns from the data, not causes.</div>
       </div> : null)}
   </div>;
 }
@@ -287,7 +287,7 @@ export default function Home() {
   const loadSample = async () => {
     try {
       const response = await fetch("/sample_customers.csv");
-      await analyzeCsv(await response.text(), "Built-in sample (public telecom benchmark, de-identified)", true);
+      await analyzeCsv(await response.text(), "Built-in sample (80 customers)", true);
     } catch {
       setUploadError("The built-in sample dataset could not be read from the application files.");
     }
@@ -328,20 +328,20 @@ export default function Home() {
   const handleComposerKey = (event: KeyboardEvent<HTMLTextAreaElement>) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void submitChat(); } };
 
   const pageCopy: Record<View, [string, string, string]> = {
-    Predict: ["CUSTOMER WORKSPACE", "Customer risk", "Describe a customer in your own words and explore an estimated churn score."],
-    Portfolio: ["PORTFOLIO OVERVIEW", "Portfolio at a glance", "Upload or load a customer list to explore risk, patterns, and predictions across the portfolio."],
-    Customers: ["CUSTOMER DATABASE", "Explore customers", "Search, filter, and open any customer to see its prediction, risk band, and explanation."],
-    "Retention Strategies": ["RETENTION REVIEW", "Who to review first", "Transparent, rule-based review suggestions for the customers in the current view."],
-    "Simulation Lab": ["WHAT-IF ANALYSIS", "Try hypothetical changes", "Compare a baseline customer with up to three hypothetical scenarios through the model."],
-    "AI Analyst": ["RESTRICTED ANALYTICS", "Ask your data", "Plain-language questions, answered with statistics computed from your scored customers."],
-    "Model performance": ["MODEL TRANSPARENCY", "How the model performs", "Review held-out results, missing-detail sensitivity, and the patterns the model uses."],
-    "Project info": ["PROJECT NOTES", "About this research", "Explore the data, approach, intended limits, and your session settings."],
+    Predict: ["CUSTOMER WORKSPACE", "Customer risk", "Describe a customer in your own words and get an instant score."],
+    Portfolio: ["PORTFOLIO OVERVIEW", "Portfolio at a glance", "Load a customer list and see risk, patterns, and predictions."],
+    Customers: ["CUSTOMER DATABASE", "Explore customers", "Search and open any customer for its score and explanation."],
+    "Retention Strategies": ["RETENTION REVIEW", "Who to review first", "Simple rule-based reminders, sorted by priority."],
+    "Simulation Lab": ["WHAT-IF ANALYSIS", "Try hypothetical changes", "Change a few details and see how the score moves."],
+    "AI Analyst": ["RESTRICTED ANALYTICS", "Ask your data", "Plain-language questions, answered with real numbers."],
+    "Model performance": ["MODEL TRANSPARENCY", "How the model performs", "Test results, sensitivity checks, and what the model learned."],
+    "Project info": ["PROJECT NOTES", "About this research", "The data, the approach, the limits, and your session settings."],
   };
   const [eyebrow, title, description] = pageCopy[view];
 
   return <div className="shell">
     <aside className="sidebar">
-      <div className="brand"><div className="brand-icon">✦</div><div><div className="brand-title">Churn Compass</div><div className="brand-sub">Customer intelligence</div></div></div>
+      <div className="brand"><div className="brand-icon">✦</div><div><div className="brand-title">C.R.A.M.</div><div className="brand-sub">Customer Retention &amp; Analytics Model</div></div></div>
       <div className="side-label">WORKSPACE</div>
       <nav className="nav" aria-label="Main navigation">{NAV.map((item) => <button key={item.name} className={`nav-button ${view === item.name ? "active" : ""}`} onClick={() => { setView(item.name); if (item.name === "Model performance") void loadImportance(); }}><span className="nav-icon">{item.icon}</span>{item.name}</button>)}</nav>
       {portfolio && <div className="side-dataset">
@@ -353,19 +353,20 @@ export default function Home() {
         </div>
         <button className="side-clear" onClick={clearSession}>Clear session data</button>
       </div>}
-      <div className="side-bottom"><strong><span className="side-dot" />Research preview</strong>Telecom customer data<br />{metadata.dataset.rows.toLocaleString()} source records · 13 details</div>
+      <div className="side-bottom"><strong><span className="side-dot" />Research preview</strong>Public telecom dataset<br />{metadata.dataset.rows.toLocaleString()} records · 13 details</div>
     </aside>
     <main className="main">
-      <div className="topline"><div className="crumb">CHURN COMPASS <span style={{ color: "#5f737d", padding: "0 6px" }}>/</span> {view.toUpperCase()}</div><span className="preview"><span className="online" /> MODEL ESTIMATES</span></div>
+      <div className="topline"><div className="crumb">C.R.A.M. <span style={{ color: "#5f737d", padding: "0 6px" }}>/</span> {view.toUpperCase()}</div><span className="preview" title="All numbers are model estimates, not facts."><span className="online" /> MODEL ESTIMATES</span></div>
+      <div className="view-body" key={view}>
       <PageHeader eyebrow={eyebrow} title={title} description={description} />
 
       {view === "Predict" && <>
-        <div className="mode-switch"><button className={`mode-choice ${entryMode === "chat" ? "selected" : ""}`} onClick={() => setEntryMode("chat")}><span>✦</span> Chat with Compass</button><button className={`mode-choice ${entryMode === "form" ? "selected" : ""}`} onClick={() => setEntryMode("form")}><span>▤</span> Quick form</button></div>
+        <div className="mode-switch"><button className={`mode-choice ${entryMode === "chat" ? "selected" : ""}`} onClick={() => setEntryMode("chat")}><span>✦</span> Chat with C.R.A.M.</button><button className={`mode-choice ${entryMode === "form" ? "selected" : ""}`} onClick={() => setEntryMode("form")}><span>▤</span> Quick form</button></div>
         {entryMode === "chat" ? <>
         <div className="split">
           <section className="surface chat-panel">
-            <div className="chat-top"><div className="guide-id"><div className="guide-avatar">✦</div><div><div className="guide-name">Compass <span className="guide-role">· customer guide</span></div><div className="guide-status"><span className="online" />Ready to help map a customer profile</div></div></div><span className="chat-tag">GUIDED INTERVIEW</span></div>
-            <div className="messages" aria-live="polite">{messages.map((message, index) => <div key={`${index}-${message.role}`} className={`message ${message.role}`}><div className="message-avatar">{message.role === "assistant" ? "✦" : "🙂"}</div><div className="message-body">{message.role === "assistant" && <span className="message-by">Compass guide</span>}{message.text}</div></div>)}{busy && <div className="message"><div className="message-avatar">✦</div><div className="message-body"><span className="message-by">Compass guide</span><span className="typing"><i /><i /><i /></span></div></div>}</div>
+            <div className="chat-top"><div className="guide-id"><div className="guide-avatar">✦</div><div><div className="guide-name">C.R.A.M. <span className="guide-role">· customer guide</span></div><div className="guide-status"><span className="online" />Ready when you are</div></div></div><span className="chat-tag">GUIDED INTERVIEW</span></div>
+            <div className="messages" aria-live="polite">{messages.map((message, index) => <div key={`${index}-${message.role}`} className={`message ${message.role}`}><div className="message-avatar">{message.role === "assistant" ? "✦" : "🙂"}</div><div className="message-body">{message.role === "assistant" && <span className="message-by">C.R.A.M.</span>}{message.text}</div></div>)}{busy && <div className="message"><div className="message-avatar">✦</div><div className="message-body"><span className="message-by">C.R.A.M.</span><span className="typing"><i /><i /><i /></span></div></div>}</div>
             {!complete && <div style={{ marginTop: 12 }}>
               <div className="quick-title">{messages.length === 1 ? "A few easy ways to start" : "You can also mention"}</div>
               <div className="quick-row">{QUICK_STARTS.map((quick) => <button className="quick-chip" key={quick.label} onClick={() => { setComposer(quick.text); composerRef.current?.focus(); }}>{quick.icon} &nbsp;{quick.label}</button>)}</div>
@@ -380,18 +381,18 @@ export default function Home() {
           <aside className="surface snapshot"><div className="snapshot-head"><div><div className="section-heading">Customer snapshot</div><div className="snapshot-sub">A live read of the conversation</div></div><span className="snapshot-mark">{complete ? "✓" : "✦"}</span></div><div className="count">{Object.keys(profile).length} of {FIELDS.length} details gathered</div><div className="progress"><span style={{ width: `${Object.keys(profile).length / FIELDS.length * 100}%` }} /></div>
             {Object.keys(profile).length ? <div className="profile-list">{FIELDS.filter((field) => field in profile).map((field) => <div className="profile-item" key={field}><div className="profile-label">{LABELS[field]}</div><div className="profile-value">{formatValue(field, profile[field])}</div>{profile[field] === null && <div className="estimated-label">◌ estimated from typical data</div>}</div>)}</div> : <div className="snapshot-empty"><span className="empty-spark">✧</span><strong>Your profile will build as we talk.</strong><p>Start with a customer’s phone habits, plan, or time with their provider.</p></div>}
             {estimated.length > 0 && <div className="snapshot-note">{estimated.length} detail(s) will use typical values and be clearly marked in the result.</div>}
-            <details className="helper"><summary>How the estimate works</summary><p>Compass maps the details you share to a research model. Missing details use typical values from its training data and are called out in your result.</p></details>
+            <details className="helper"><summary>How the estimate works</summary><p>C.R.A.M. turns what you share into a score from a research model. Missing details use typical values and are called out in the result.</p></details>
             {prediction && <button className="outline-button" style={{ marginTop: 13, width: "100%" }} onClick={() => setSimBaseline({ profile, source: "Predict page profile" })}>⇄ Use this profile in the Simulation Lab</button>}
           </aside>
         </div>
         </> : <div className="quick-split"><form className="surface panel quick-panel" onSubmit={runQuickPrediction}>
-          <div className="section-heading">Customer details</div><p className="section-copy">A rough estimate is fine. Mark anything unknown and we’ll show what was estimated.</p>
+          <div className="section-heading">Customer details</div><p className="section-copy">Rough numbers are fine. Check “Not sure” for anything unknown.</p>
           <div className="form-section">Account & plans</div><div className="form-grid">{FIELDS.slice(0, 4).map((field) => renderField(field))}</div>
           <div className="form-section">Monthly phone activity</div><div className="form-grid">{FIELDS.slice(4, 12).map((field) => renderField(field))}</div>
           <div className="form-section">Customer support</div><div className="form-grid">{renderField(FIELDS[12])}</div>
           <div className="action-row"><button className="primary-button" type="submit" disabled={busy}>{busy ? "Scoring…" : "Estimate customer risk"}</button><button type="button" className="outline-button" onClick={() => { setQuickValues(Object.fromEntries(FIELDS.map((field) => [field, String(RANGE[field].median)]))); setQuickUnknown([]); setPrediction(null); }}>Reset fields</button></div>
           {prediction && <ScoreCard result={prediction} profile={Object.fromEntries(FIELDS.map((field) => [field, quickUnknown.includes(field) ? null : Number(quickValues[field])]))} thresholds={thresholds} />}
-        </form><aside className="surface panel form-aside"><div className="project-icon">✧</div><h2 className="subhead">Make it your own</h2><p className="muted">Enter a complete profile or mark a detail as unknown. Unknown fields use typical values from the model’s training data and are clearly labeled in the result.</p><div className="form-aside-stat"><span>Prediction cutoff</span><strong>50%</strong></div><div className="form-aside-stat"><span>Inputs used</span><strong>13 details</strong></div><div className="note-card" style={{ marginTop: 16 }}>A research estimate for exploring this dataset. Not a guarantee or a customer decision.</div></aside></div>}
+        </form><aside className="surface panel form-aside"><div className="project-icon">✧</div><h2 className="subhead">Good to know</h2><p className="muted">Unknown details use typical values from the training data and are clearly labeled in the result.</p><div className="form-aside-stat"><span>Prediction cutoff</span><strong>50%</strong></div><div className="form-aside-stat"><span>Inputs used</span><strong>13 details</strong></div><div className="note-card" style={{ marginTop: 16 }}>A research estimate — not a guarantee, and not for real customer decisions.</div></aside></div>}
       </>}
 
       {view === "Portfolio" && <PortfolioView portfolio={portfolio} filters={filters} onFilters={setFilters} uploadBusy={uploadBusy} uploadError={uploadError} onFile={(event) => void handleUpload(event)} onLoadSample={() => void loadSample()} onExportSummary={() => void exportSummary()} exportBusy={exportBusy} onNavigate={(next) => setView(next as View)} />}
@@ -401,6 +402,7 @@ export default function Home() {
       {view === "AI Analyst" && <AnalystView portfolio={portfolio} filters={filters} />}
       {view === "Model performance" && <ModelView importance={importance} thresholds={thresholds} />}
       {view === "Project info" && <ProjectView portfolio={portfolio} thresholds={thresholds} onThresholds={changeThresholds} onClearSession={clearSession} onLoadSample={() => void loadSample()} uploadBusy={uploadBusy} uploadError={uploadError} onFile={(event) => void handleUpload(event)} />}
+      </div>
     </main>
   </div>;
 
@@ -438,31 +440,35 @@ function ModelView({ importance, thresholds }: { importance: Importance; thresho
     }).catch(() => { /* The page remains useful without this optional chart. */ });
   }, []);
   const metrics: [string, number, string][] = [
-    ["Accuracy", METRICS.accuracy, "Overall correct predictions"], ["Churn recall", METRICS.churn_recall, "Churners correctly identified"], ["Churn precision", METRICS.churn_precision, "Flagged customers who churned"],
-    ["Churn F1", METRICS.churn_f1, "Precision and recall balance"], ["ROC-AUC", METRICS.roc_auc, "Ranking separation"], ["PR-AUC", METRICS.pr_auc_average_precision, "Imbalance-aware ranking"],
+    ["Accuracy", METRICS.accuracy, "How often the model was right overall"],
+    ["Churners caught", METRICS.churn_recall, "Of real churners, how many were flagged"],
+    ["Flag precision", METRICS.churn_precision, "Of flagged customers, how many really churned"],
+    ["Catch–flag balance", METRICS.churn_f1, "Balance between catching churners and false alarms"],
+    ["Ranking quality", METRICS.roc_auc, "How well the model orders customers by risk"],
+    ["Ranking (rare cases)", METRICS.pr_auc_average_precision, "Ranking quality when churners are rare"],
   ];
   const matrix = METRICS.confusion_matrix_labels_0_1;
   const operatingPoints = Object.entries(HELDOUT).map(([name, values]) => ({ name, values }));
   return <div className="model-layout"><div className="metric-grid">{metrics.map(([label, value, note]) => <div className="metric-card" key={label}><div className="metric-label">{label}</div><div className="metric-value">{(value * 100).toFixed(1)}%</div><div className="metric-note">{note}</div></div>)}</div>
-    <div className="note-card">Churn is {(metadata.dataset.churn_rate * 100).toFixed(1)}% of this dataset. A majority-class baseline reaches {(metadata.baseline.test_accuracy * 100).toFixed(1)}% accuracy but catches no churners. Accuracy alone can hide that.</div>
-    <div className="model-grid"><section className="surface panel"><h2 className="subhead">Held-out results</h2><p className="section-copy">The model trained on {metadata.dataset.rows.toLocaleString()} records. These results use a stratified {Math.round(metadata.split.test_size * 100)}% test split ({metadata.split.test_rows} customers) held aside from training.</p><div className="table-wrap" style={{ marginTop: 15 }}><table className="data-table confusion"><thead><tr><th>Actual \ Predicted</th><th>No churn</th><th>Churn</th></tr></thead><tbody><tr><th>No churn</th><td>{matrix[0][0]}</td><td>{matrix[0][1]}</td></tr><tr><th>Churn</th><td>{matrix[1][0]}</td><td>{matrix[1][1]}</td></tr></tbody></table></div></section>
-      <section className="surface panel"><h2 className="subhead">When details are unknown</h2><p className="section-copy">Test profiles had details hidden and replaced with training-data medians.</p><div className="unknown-grid">{Object.entries(MEDIAN_CHECK).map(([count, result]) => <div className="unknown-card" key={count}><div className="metric-label">{count} unknown details</div><div className="mini-metric"><span>Churn recall</span><strong>{(result.churn_recall.mean * 100).toFixed(1)}%</strong></div><div className="mini-metric"><span>Churn F1</span><strong>{(result.churn_f1.mean * 100).toFixed(1)}%</strong></div><div className="mini-metric"><span>Accuracy</span><strong>{(result.accuracy.mean * 100).toFixed(1)}%</strong></div></div>)}</div></section></div>
+    <div className="note-card">About {(metadata.dataset.churn_rate * 100).toFixed(1)}% of customers in this dataset left. A “guess that nobody leaves” rule still gets {(metadata.baseline.test_accuracy * 100).toFixed(1)}% accuracy but catches zero churners — accuracy alone can hide that.</div>
+    <div className="model-grid"><section className="surface panel"><h2 className="subhead">Held-out results</h2><p className="section-copy">The model trained on {metadata.dataset.rows.toLocaleString()} records. These numbers come from {metadata.split.test_rows} test customers held out of training.</p><div className="table-wrap" style={{ marginTop: 15 }}><table className="data-table confusion"><thead><tr><th>Actual \ Predicted</th><th>No churn</th><th>Churn</th></tr></thead><tbody><tr><th>No churn</th><td>{matrix[0][0]}</td><td>{matrix[0][1]}</td></tr><tr><th>Churn</th><td>{matrix[1][0]}</td><td>{matrix[1][1]}</td></tr></tbody></table></div></section>
+      <section className="surface panel"><h2 className="subhead">When details are unknown</h2><p className="section-copy">Some details were hidden and replaced with typical values.</p><div className="unknown-grid">{Object.entries(MEDIAN_CHECK).map(([count, result]) => <div className="unknown-card" key={count}><div className="metric-label">{count} unknown details</div><div className="mini-metric"><span>Churn recall</span><strong>{(result.churn_recall.mean * 100).toFixed(1)}%</strong></div><div className="mini-metric"><span>Churn F1</span><strong>{(result.churn_f1.mean * 100).toFixed(1)}%</strong></div><div className="mini-metric"><span>Accuracy</span><strong>{(result.accuracy.mean * 100).toFixed(1)}%</strong></div></div>)}</div></section></div>
 
     <section className="surface panel">
-      <h2 className="subhead">V2 engine · champion model evaluation</h2>
+      <h2 className="subhead">Upgraded model (V2) — test results</h2>
       <p className="section-copy">
-        The upgraded application scores customers with the V2 champion ({String(v2Metadata.champion_model_name)}),
-        evaluated once on a held-out test split. The table compares the two documented operating points —
-        the production <b>50% binary cutoff</b> used across this app, and the Phase 1 cost-optimal threshold
-        of {Number(v2Metadata.optimal_threshold).toFixed(4)}, shown here only as an evaluated operating point
-        (a false negative costs ${COST.cost_false_negative.toFixed(0)} in lost customer value; a false positive costs ${COST.cost_false_positive.toFixed(0)} of retention outreach).
+        This app scores customers with the upgraded V2 model ({String(v2Metadata.champion_model_name)}),
+        tested once on held-out customers. The table compares the <b>50% cutoff used everywhere in this
+        app</b> with the lower, cost-optimal cutoff from Phase 1 — shown for comparison only.
+        (A missed churner costs about ${COST.cost_false_negative.toFixed(0)} in lost value; flagging a
+        happy customer costs about ${COST.cost_false_positive.toFixed(0)} in outreach.)
       </p>
       <div className="table-wrap" style={{ marginTop: 12 }}>
         <table className="data-table">
-          <thead><tr><th style={{ textAlign: "left" }}>Operating point</th><th>Threshold</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>F1</th><th>Brier</th><th>Business cost</th><th>Savings vs. contact-no-one</th></tr></thead>
+          <thead><tr><th style={{ textAlign: "left" }}>Operating point</th><th>Threshold</th><th>Accuracy</th><th>Flag precision</th><th>Churners caught</th><th>Balance</th><th>Calibration error</th><th>Modeled cost</th><th>Savings vs. contacting no one</th></tr></thead>
           <tbody>
             {operatingPoints.map(({ name, values }) => <tr key={name}>
-              <td style={{ textAlign: "left", fontWeight: 600 }}>{name === "at_default_0_50" ? "Default 50% cutoff (production)" : "Phase 1 cost-optimal (evaluated)"}</td>
+              <td style={{ textAlign: "left", fontWeight: 600 }}>{name === "at_default_0_50" ? "50% cutoff (in use)" : "Lower cutoff (comparison)"}</td>
               <td>{Number(values.threshold).toFixed(4)}</td>
               <td>{(Number(values.accuracy) * 100).toFixed(1)}%</td>
               <td>{(Number(values.precision) * 100).toFixed(1)}%</td>
@@ -476,31 +482,31 @@ function ModelView({ importance, thresholds }: { importance: Importance; thresho
         </table>
       </div>
       <div className="score-caption" style={{ marginTop: 10 }}>
-        Trade-off at the cost-optimal point: recall rises from {(Number(HELDOUT.at_default_0_50.recall) * 100).toFixed(1)}% to {(Number(HELDOUT.at_optimal_threshold.recall) * 100).toFixed(1)}% and modeled cost falls, but far more customers are flagged
-        ({cm("at_optimal_threshold")[0][1] + cm("at_optimal_threshold")[1][1]} vs. {cm("at_default_0_50")[0][1] + cm("at_default_0_50")[1][1]}). Production keeps the 50% label; this page documents the alternative.
+        At the lower cutoff, recall rises from {(Number(HELDOUT.at_default_0_50.recall) * 100).toFixed(1)}% to {(Number(HELDOUT.at_optimal_threshold.recall) * 100).toFixed(1)}% and modeled cost falls — but far more customers get flagged
+        ({cm("at_optimal_threshold")[0][1] + cm("at_optimal_threshold")[1][1]} vs. {cm("at_default_0_50")[0][1] + cm("at_default_0_50")[1][1]}). This app keeps the 50% label; the lower cutoff is documented as an option, not in use.
       </div>
     </section>
 
     <section className="surface panel">
       <h2 className="subhead">Probability calibration</h2>
-      <p className="section-copy">How closely predicted probabilities track observed churn on the held-out split (lower is better).</p>
+      <p className="section-copy">How closely the predicted % matches the real churn rate on the held-out customers (lower score is better).</p>
       <div className="table-wrap" style={{ marginTop: 12 }}>
         <table className="data-table">
-          <thead><tr><th style={{ textAlign: "left" }}>Variant</th><th>Brier score</th><th>Expected calibration error</th></tr></thead>
-          <tbody>{Object.entries(CALIBRATION).map(([variant, values]) => <tr key={variant}>
+          <thead><tr><th style={{ textAlign: "left" }}>Variant</th><th>Overall error</th><th>Miscalibration</th></tr></thead>
+          <tbody>{Object.entries(CALIBRATION).filter(([variant]) => variant !== "recommendation").map(([variant, values]) => <tr key={variant}>
             <td style={{ textAlign: "left" }}>{variant.replace("_", " ")}</td>
             <td>{Number(values.brier_score).toFixed(4)}</td>
             <td>{Number(values.expected_calibration_error).toFixed(4)}</td>
           </tr>)}</tbody>
         </table>
       </div>
-      <div className="score-caption" style={{ marginTop: 10 }}>The served model is the uncalibrated champion; calibration variants were evaluated but not deployed. Probabilities are model estimates, not calibrated guarantees.</div>
+      <div className="score-caption" style={{ marginTop: 10 }}>The live model is the uncalibrated one; the other variants were tested but not deployed. All probabilities are estimates.</div>
     </section>
 
     <div className="model-grid">
       <section className="surface panel">
-        <h2 className="subhead">Risk bands & input schema</h2>
-        <p className="section-copy">Defaults from the V2 metadata; sessions can adjust bands in Project info.</p>
+        <h2 className="subhead">Risk bands &amp; input ranges</h2>
+        <p className="section-copy">Defaults from the model metadata; you can adjust them in Project info.</p>
         <div className="form-aside-stat"><span>Medium risk starts at</span><strong>{thresholds.medium_threshold.toFixed(4)}</strong></div>
         <div className="form-aside-stat"><span>High risk starts at</span><strong>{thresholds.high_threshold.toFixed(2)}</strong></div>
         <div className="form-section" style={{ marginTop: 14 }}>Accepted input ranges</div>
@@ -509,11 +515,11 @@ function ModelView({ importance, thresholds }: { importance: Importance; thresho
             <tbody>{FIELDS.map((field) => <tr key={field}><td style={{ textAlign: "left" }}>{field}</td><td>{V2_RANGE[field].min}</td><td>{V2_RANGE[field].max}</td><td>{V2_RANGE[field].median}</td></tr>)}</tbody>
           </table>
         </div>
-        <p className="section-copy" style={{ marginTop: 10 }}>Plans accept Yes/No variants. Optional columns: <b>Customer ID</b> (synthetic IDs are generated when absent) and <b>Churn</b> (true/false labels for observed-rate comparisons).</p>
+        <p className="section-copy" style={{ marginTop: 10 }}>Plans accept Yes/No. Optional columns: <b>Customer ID</b> (created when missing) and <b>Churn</b> (true/false) — Churn enables the observed-rate numbers.</p>
       </section>
       <section className="surface panel">
-        <h2 className="subhead">Model-wide feature importance</h2>
-        <p className="section-copy">Training-sample global SHAP results from Phase 2; this chart describes the model, not any particular upload.</p>
+        <h2 className="subhead">What the model learned overall</h2>
+        <p className="section-copy">Overall patterns from training. This describes the model itself, not your upload.</p>
         {globalImportance.length ? <>
           <div className="bar-chart">{globalImportance.slice(0, 10).map((item) => <div className="bar-item" key={item.feature}><span>{item.feature}</span><div className="bar-track"><span style={{ width: `${item.mean_abs_contribution / globalImportance[0].mean_abs_contribution * 100}%` }} /></div><span>{(item.mean_abs_contribution * 100).toFixed(1)} pt</span></div>)}</div>
           <div className="action-row"><a className="outline-button" href="/global_feature_importance.csv" download="cram_global_feature_importance.csv">↓ Export global feature importance</a></div>
@@ -521,8 +527,8 @@ function ModelView({ importance, thresholds }: { importance: Importance; thresho
       </section>
     </div>
 
-    <section className="surface panel importance"><h2 className="subhead">Signals the original Random Forest used most</h2><p className="section-copy">Relative importance within the original serving model, kept for comparison with the upgraded engine. These patterns are not proof that a detail causes churn.</p>{importance.length ? <div className="bar-chart">{importance.slice(0, 10).map((item) => <div className="bar-item" key={item.name}><span>{LABELS[item.name] || item.name}</span><div className="bar-track"><span style={{ width: `${item.value / importance[0].value * 100}%` }} /></div><span>{(item.value * 100).toFixed(1)}%</span></div>)}</div> : <p className="loading">Loading model signals…</p>}</section>
-    <p className="disclaimer">This model was evaluated on this telecom dataset only. It is an educational research prototype; don’t use its estimate as the sole basis for contacting, pricing, or treating real customers.</p>
+    <section className="surface panel importance"><h2 className="subhead">Signals the original Random Forest used most</h2><p className="section-copy">Importance in the original Random Forest, kept for comparison with the upgraded model. Not proof of cause.</p>{importance.length ? <div className="bar-chart">{importance.slice(0, 10).map((item) => <div className="bar-item" key={item.name}><span>{LABELS[item.name] || item.name}</span><div className="bar-track"><span style={{ width: `${item.value / importance[0].value * 100}%` }} /></div><span>{(item.value * 100).toFixed(1)}%</span></div>)}</div> : <p className="loading">Loading model signals…</p>}</section>
+    <p className="disclaimer">Trained and tested on one public telecom dataset only. A research prototype — don’t use it as the only reason to contact, price, or treat real customers.</p>
   </div>;
 }
 
@@ -565,11 +571,11 @@ function ProjectView({
   const thresholdValid = !Number.isNaN(Number(medium)) && !Number.isNaN(Number(high)) && Number(high) > Number(medium) && Number(medium) >= 0 && Number(high) <= 1;
 
   return <div className="project-layout">
-    <section className="surface project-intro"><div className="eyebrow">THE RESEARCH</div><h2 className="project-title">A practical experiment in customer retention.</h2><p className="project-lead">This project explores whether account history, plan choices, calling habits, and support contacts can help identify telecom customers who may be at risk of leaving. The upgraded application runs the C.R.A.M. V2 engine: portfolio analytics, risk bands, SHAP explanations, rule-based retention reviews, what-if simulation, and a restricted AI analyst.</p></section>
+    <section className="surface project-intro"><div className="eyebrow">THE RESEARCH</div><h2 className="project-title">A practical experiment in customer retention.</h2><p className="project-lead">This research asks whether account history, plans, calling habits, and support contacts can flag telecom customers who might leave. The app runs the C.R.A.M. V2 engine: portfolio analytics, risk bands, explanations, review suggestions, what-if simulations, and a restricted AI analyst.</p></section>
     <div className="metric-grid"><div className="metric-card"><div className="metric-label">Customer records</div><div className="metric-value">{metadata.dataset.rows.toLocaleString()}</div><div className="metric-note">Public telecom dataset</div></div><div className="metric-card"><div className="metric-label">Customers who churned</div><div className="metric-value">{metadata.dataset.churn_rows.toLocaleString()}</div><div className="metric-note">{(metadata.dataset.churn_rate * 100).toFixed(1)}% of the source rows</div></div><div className="metric-card"><div className="metric-label">Customer details</div><div className="metric-value">13</div><div className="metric-note">Plans, usage, tenure, support</div></div></div>
     <div className="project-grid">
-      <section className="surface panel"><div className="project-icon">⌕</div><h2 className="subhead">How it works</h2><p className="muted">The app gathers a customer profile or a CSV portfolio, validates every value, derives usage charges from minutes, fills unknown values with training-data medians, and scores with the V2 champion model. Explanations use SHAP against a fixed reference population.</p><div className="step-list"><div><b>01</b><span>Describe or upload customers</span></div><div><b>02</b><span>Review validated, scored results</span></div><div><b>03</b><span>Explore explanations and scenarios</span></div></div></section>
-      <section className="surface panel"><div className="project-icon">◎</div><h2 className="subhead">Research limits</h2><p className="muted">The model reflects this telecom dataset and its customer population. It may not generalize to another provider or industry. A score is an estimate, not a guarantee or a causal explanation. Recommendations are review prompts, not proven interventions.</p><div className="note-card" style={{ marginTop: 15 }}>Use this application to explore model behavior and research questions, not to make decisions about real customers.</div><a className="paper-link" href="/Customer_Churn_Project_Paper.pdf" target="_blank" rel="noreferrer">Read the project paper ↗</a></section>
+      <section className="surface panel"><div className="project-icon">⌕</div><h2 className="subhead">How it works</h2><p className="muted">You describe or upload customers; every value is checked; missing values are filled with typical values; the V2 model scores each customer. Explanations show which details pushed each score.</p><div className="step-list"><div><b>01</b><span>Describe or upload customers</span></div><div><b>02</b><span>Review validated, scored results</span></div><div><b>03</b><span>Explore explanations and scenarios</span></div></div></section>
+      <section className="surface panel"><div className="project-icon">◎</div><h2 className="subhead">Research limits</h2><p className="muted">The model reflects this one telecom dataset and may not transfer elsewhere. A score is an estimate, not a cause. Suggestions are review prompts, not proven fixes.</p><div className="note-card" style={{ marginTop: 15 }}>Use this app to explore the model and the research — not to make decisions about real customers.</div><a className="paper-link" href="/Customer_Churn_Project_Paper.pdf" target="_blank" rel="noreferrer">Read the project paper ↗</a></section>
     </div>
 
     <section className="surface panel" id="settings">
@@ -579,7 +585,7 @@ function ProjectView({
         <div>
           <div className="form-section">Active dataset</div>
           {portfolio ? <div className="profile-list">
-            <div className="profile-item"><div className="profile-label">Source</div><div className="profile-value">{portfolio.isSample ? "Built-in sample (de-identified benchmark)" : "Your upload"}</div></div>
+            <div className="profile-item"><div className="profile-label">Source</div><div className="profile-value">{portfolio.isSample ? "Built-in sample" : "Your upload"}</div></div>
             <div className="profile-item"><div className="profile-label">File</div><div className="profile-value">{portfolio.name}</div></div>
             <div className="profile-item"><div className="profile-label">Customers scored</div><div className="profile-value">{portfolio.rows.length.toLocaleString()}</div></div>
           </div> : <p className="muted">No dataset is loaded. Upload a CSV or load the built-in 80-customer sample.</p>}
@@ -589,7 +595,7 @@ function ProjectView({
           </div>
           <div className="upload-box" style={{ marginTop: 12 }}>
             <strong style={{ fontSize: 12 }}>Upload a customer CSV</strong>
-            <p className="section-copy">Up to 4 MB and 10,000 customers; all 13 model input columns required. A rejected file never replaces a working dataset.</p>
+            <p className="section-copy">Up to 4 MB / 10,000 customers. All 13 model columns are required; a rejected file never replaces your working data.</p>
             <input className="file-input" type="file" accept=".csv,text/csv" onChange={onFile} disabled={uploadBusy} />
           </div>
           {uploadBusy && <div className="loading" style={{ marginTop: 8 }}>Validating and scoring…</div>}
@@ -597,7 +603,7 @@ function ProjectView({
         </div>
         <div>
           <div className="form-section">Risk bands (V2 classification)</div>
-          <p className="section-copy">Descriptive segments separate from the 50% binary decision. Defaults come from the V2 metadata.</p>
+          <p className="section-copy">Extra risk levels, separate from the 50% decision. Defaults come from the model metadata.</p>
           <div className="range-inputs" style={{ marginTop: 10 }}>
             <div className="field"><label htmlFor="band-medium">Medium risk ≥</label><input id="band-medium" type="number" min={0} max={1} step={0.0001} value={medium} onChange={(event) => setMedium(event.target.value)} /></div>
             <div className="field"><label htmlFor="band-high">High risk ≥</label><input id="band-high" type="number" min={0} max={1} step={0.01} value={high} onChange={(event) => setHigh(event.target.value)} /></div>
@@ -609,9 +615,9 @@ function ProjectView({
           {!thresholdValid && <div className="error">Bands must satisfy 0 ≤ medium &lt; high ≤ 1.</div>}
           <div className="form-section" style={{ marginTop: 16 }}>AI provider status</div>
           <p className="section-copy">{providerConfigured === null ? "Checking…" : providerConfigured
-            ? "A language-model key is configured on the server. The analyst narrates computed facts with grounding validation."
-            : "No language-model key is configured. The analyst runs in facts-only mode and still returns verified statistics."} The key itself is never shown here or sent to the browser.</p>
-          <div className="note-card" style={{ marginTop: 10 }}><b>Privacy:</b> uploads are processed in memory for this session and never stored server-side. When AI narration is on, the request sends only column names, dataset metadata, and aggregate computed facts — not raw rows or identifiers.</div>
+            ? "An AI key is set on the server. The analyst describes the computed facts, and its text is checked against them."
+            : "No AI key is set — the analyst runs in facts-only mode and still returns verified numbers. The key itself is never shown here or sent to the browser."}</p>
+          <div className="note-card" style={{ marginTop: 10 }}><b>Privacy:</b> your file is processed in memory for this session and never stored. With AI narration on, only column names, dataset settings, and summary numbers are sent out — never raw rows or IDs.</div>
         </div>
       </div>
     </section>

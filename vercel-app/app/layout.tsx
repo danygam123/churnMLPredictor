@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Churn Compass | Customer Intelligence",
-  description: "A guided research workspace for exploring telecom customer churn risk.",
+  title: "C.R.A.M. | Customer Retention & Analytics Model",
+  description: "Estimate which telecom customers might leave, and what to check next.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {

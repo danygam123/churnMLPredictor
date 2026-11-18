@@ -10,6 +10,7 @@ const PY_PORTS = {
   "/api/recommend": 8603,
   "/api/simulate": 8604,
   "/api/analyst": 8605,
+  "/api/predict": 8606,
 };
 const NEXT_PORT = 3000;
 const LISTEN_PORT = 3100;

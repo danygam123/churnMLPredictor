@@ -1,6 +1,6 @@
-# Churn Compass for Vercel
+# C.R.A.M. — Customer Retention & Analytics Model (Vercel app)
 
-This is the Vercel version of Churn Compass. It is a separate Next.js web app with a Python scoring function. The existing Streamlit app remains in the parent project.
+This is the deployed Next.js + Python application of the C.R.A.M. project.
 
 ## What is included
 
